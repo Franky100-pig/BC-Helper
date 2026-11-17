@@ -5,6 +5,8 @@
 - 求导 (derivative)：1–8 阶导数，可选在 `x = a` 处求值
 - 积分 (integral)：不定积分、定积分，方法偏好可选换元 (u-substitution) / 分部 (integration by parts)
 
+**在线预览：<https://franky100-pig.github.io/BC-Helper/>**
+
 ## 设计原则
 
 - **看过程，不只看答案**：每一步都带法则标签和公式，像 LA Helper 的矩阵步骤一样可对照课本
