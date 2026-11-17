@@ -200,6 +200,157 @@ function collectState() {
   saveState();
 }
 
+const THEME_STORE = "bc-theme";
+
+function toggleTheme() {
+  const current = document.documentElement.getAttribute("data-theme");
+  const next = current === "light" ? "dark" : "light";
+  document.documentElement.setAttribute("data-theme", next);
+  try { localStorage.setItem(THEME_STORE, next); } catch (e) {}
+  if (window.BCGraph) window.BCGraph.redraw();
+}
+
+/* ---------------- 考场模式：991 风格计算器 + Desmos ---------------- */
+const EXAM_STORE = "bc-exam-v1";
+const DEFAULT_EXAM = { expr: "sin(30)", deg: true, frac: false, ans: 0, view: "study" };
+
+function loadExam() {
+  try { return Object.assign({}, DEFAULT_EXAM, JSON.parse(localStorage.getItem(EXAM_STORE) || "{}")); }
+  catch (e) { return Object.assign({}, DEFAULT_EXAM); }
+}
+let exam = loadExam();
+let graphInited = false;
+
+function saveExam() {
+  try { localStorage.setItem(EXAM_STORE, JSON.stringify(exam)); } catch (e) {}
+}
+
+function examExpr() { return $("calcExpr").textContent.trim() || "0"; }
+
+function updateExamScreen() {
+  $("calcExpr").textContent = exam.expr || "0";
+  $("angleInd").textContent = exam.deg ? "DEG" : "RAD";
+  $("fmtInd").textContent = exam.frac ? "D/C" : "F";
+  $("ansInd").textContent = window.__bcAns == null ? "0" : String(window.__bcAns).slice(0, 14);
+}
+
+function equalPress() {
+  const res = window.BCCalc.evaluate(exam.expr, {
+    deg: exam.deg, frac: exam.frac, ans: window.__bcAns,
+  });
+  const out = $("calcResult");
+  if (res.ok) {
+    out.className = "result";
+    out.textContent = res.text;
+    window.__bcAns = res.value;
+    exam.ans = res.value;
+    saveExam();
+    if (graphInited) {
+      try {
+        window.BCGraph.setExpression(window.BCCalc.graphLatex(exam.expr), exam.deg);
+      } catch (e) {}
+    }
+  } else {
+    out.className = "result error";
+    const msg = res.error.indexOf("x 赋值") !== -1
+      ? "含变量 x · 试试 d/dx(函数, 点) 或 ∫(函数, 下限, 上限)"
+      : "Error · " + res.error;
+    out.textContent = msg;
+  }
+  updateExamScreen();
+}
+
+function insertText(text) {
+  if (exam.expr === "0" || exam.expr === "") exam.expr = "";
+  exam.expr += text;
+  saveExam();
+  updateExamScreen();
+}
+
+function examKey(action) {
+  if (action === "clear") {
+    exam.expr = ""; window.__bcAns = 0;
+    $("calcResult").className = "result";
+    $("calcResult").textContent = "0";
+    saveExam(); updateExamScreen();
+  } else if (action === "del") {
+    exam.expr = exam.expr.slice(0, -1);
+    saveExam(); updateExamScreen();
+  } else if (action === "equals") {
+    equalPress();
+  } else if (action === "angle") {
+    exam.deg = !exam.deg; saveExam(); updateExamScreen();
+    if (graphInited && window.BCGraph) window.BCGraph.setExpression(null, exam.deg);
+    graphStatus("角度制已切换为 " + (exam.deg ? "DEG" : "RAD"), "ok");
+  } else if (action === "frac") {
+    exam.frac = !exam.frac; saveExam(); updateExamScreen();
+  }
+}
+
+function switchView(view) {
+  exam.view = view;
+  saveExam();
+  $("viewStudy").hidden = view !== "study";
+  $("viewExam").hidden = view !== "exam";
+  document.querySelectorAll(".view-tab").forEach((tab) => {
+    tab.classList.toggle("active", tab.dataset.view === view);
+  });
+  if (view === "exam") {
+    updateExamScreen();
+    if (!graphInited && window.BCGraph) {
+      graphInited = true;
+      window.BCGraph.init();
+    }
+    if (graphInited && window.BCGraph && window.BCCalc) {
+      try { window.BCGraph.setExpression(window.BCCalc.graphLatex(exam.expr), exam.deg); } catch (e) {}
+    }
+  }
+}
+
+function graphStatus(msg, kind) {
+  const el = $("graphStatus");
+  if (!el) return;
+  el.textContent = msg;
+  el.className = "graph-status " + (kind || "");
+}
+
+function initExamEvents() {
+  document.querySelectorAll(".view-tab").forEach((tab) => {
+    tab.addEventListener("click", () => switchView(tab.dataset.view));
+  });
+  $("calcKeys").addEventListener("click", (e) => {
+    const btn = e.target.closest("button");
+    if (!btn) return;
+    if (btn.dataset.ins !== undefined) insertText(btn.dataset.ins);
+    else if (btn.dataset.act) examKey(btn.dataset.act);
+  });
+  document.addEventListener("keydown", (e) => {
+    if ($("viewExam").hidden) return;
+    if (document.activeElement && /INPUT|TEXTAREA/.test(document.activeElement.tagName)) return;
+    const map = { "*": "*", "/": "/", "-": "-", "+": "+", "^": "^", "(": "(", ")": ")", ",": "," };
+    if (/^[0-9.x]$/.test(e.key)) insertText(e.key);
+    else if (map[e.key]) insertText(map[e.key]);
+    else if (e.key === "Enter" || e.key === "=") { e.preventDefault(); equalPress(); }
+    else if (e.key === "Backspace") { e.preventDefault(); examKey("del"); }
+    else if (e.key === "Escape") examKey("clear");
+  });
+  $("plotNow").addEventListener("click", () => {
+    if (!window.BCGraph) return;
+    window.BCGraph.setExpression(window.BCCalc.graphLatex(exam.expr), exam.deg);
+    graphStatus("已绘制 " + exam.expr, "ok");
+  });
+  $("graphClear").addEventListener("click", () => {
+    window.BCGraph.clear();
+    graphStatus("已清空图像", "");
+  });
+  $("plotIn").addEventListener("click", () => window.BCGraph.zoom(0.6));
+  $("plotOut").addEventListener("click", () => window.BCGraph.zoom(1.6));
+  $("plotReset").addEventListener("click", () => window.BCGraph.reset());
+  $("themeToggleExam").addEventListener("click", toggleTheme);
+}
+
+window.__bcAns = exam.ans || 0;
+
 function initEvents() {
   document.querySelectorAll(".mode-tab").forEach((tab) => {
     tab.addEventListener("click", () => setMode(tab.dataset.mode));
@@ -213,12 +364,7 @@ function initEvents() {
   $("expr").addEventListener("input", collectState);
   $("compute").addEventListener("click", compute);
   $("printPdf").addEventListener("click", () => window.print());
-  $("themeToggle").addEventListener("click", () => {
-    const current = document.documentElement.getAttribute("data-theme");
-    const next = current === "light" ? "dark" : "light";
-    document.documentElement.setAttribute("data-theme", next);
-    try { localStorage.setItem("bc-theme", next); } catch (e) {}
-  });
+  $("themeToggle").addEventListener("click", toggleTheme);
   $("expr").addEventListener("keydown", (e) => {
     if (e.key === "Enter") { e.preventDefault(); compute(); }
   });
@@ -226,3 +372,6 @@ function initEvents() {
 
 syncControls();
 initEvents();
+initExamEvents();
+updateExamScreen();
+if (exam.view === "exam") switchView("exam");

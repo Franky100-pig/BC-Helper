@@ -30,6 +30,35 @@ function setStatus(msg, kind) {
   }
 }
 
+/* 离线缓存状态徽标（只查询、不干预引擎启动）。 */
+function reportCacheStatus(ready) {
+  const el = document.getElementById("cacheStatus");
+  if (!el || !navigator.serviceWorker || !("caches" in window)) return;
+  const onMsg = (event) => {
+    if (!event.data || event.data.type !== "BC_CACHE_STATUS_RESULT") return;
+    const s = event.data.payload || {};
+    if (s.engine) {
+      el.className = "cache-status ready";
+      el.textContent = "✓ 引擎已装到浏览器 · " + s.files + " 个文件在本地，断网也能算";
+      navigator.serviceWorker.removeEventListener("message", onMsg);
+    } else if (ready) {
+      el.className = "cache-status warn";
+      el.textContent = "引擎已就绪，正在后台写入离线缓存…";
+      setTimeout(ask, 3000);
+    } else {
+      el.className = "cache-status";
+      el.textContent = "首次启动：正在把引擎装进浏览器（约 19 MB）…";
+    }
+  };
+  const ask = () => {
+    const ctrl = navigator.serviceWorker.controller;
+    if (ctrl) ctrl.postMessage({ type: "BC_CACHE_STATUS" });
+  };
+  navigator.serviceWorker.addEventListener("message", onMsg);
+  ask();
+  if (!ready) setTimeout(ask, 1500);
+}
+
 function startProgress() {
   let total = 21000000;
   fetch("pyodide/manifest.json")
@@ -108,6 +137,7 @@ function boot() {
   if (bootPromise) return bootPromise;
   bootPromise = (async () => {
     startProgress();
+    reportCacheStatus(false);
     let loader = null;
     let pyodide = null;
     let lastError = "未知错误";
@@ -161,6 +191,7 @@ function boot() {
       window.BC.pyodide = pyodide;
       window.BC.ready = true;
       setStatus("引擎已就绪 · SymPy 在本地运行", "ready");
+      reportCacheStatus(true);
       const computeBtn = document.getElementById("compute");
       if (computeBtn) computeBtn.disabled = false;
     } catch (err) {

@@ -28,7 +28,7 @@ def main():
     core = bundle_core()
     web = ROOT / "web"
     pages = {name: (web / name).read_text(encoding="utf-8")
-             for name in ("index.html", "app.js", "bridge.js", "sw.js")}
+             for name in ("index.html", "app.js", "bridge.js", "calc-engine.js", "desmos.js", "sw.js")}
     blob = json.dumps(core, ensure_ascii=False) + "".join(pages.values())
     version = hashlib.sha1(blob.encode("utf-8")).hexdigest()[:8]
     query = "?v=" + version
@@ -38,13 +38,13 @@ def main():
         encoding="utf-8",
     )
     html = pages["index.html"]
-    for name in ("core_bundle.js", "bridge.js", "app.js"):
+    for name in ("core_bundle.js", "bridge.js", "app.js", "calc-engine.js", "desmos.js"):
         html = html.replace(
             '<script src="' + name + '"></script>',
             '<script src="' + name + query + '"></script>',
         )
     (OUT / "index.html").write_text(html, encoding="utf-8")
-    for name in ("app.js", "bridge.js", "sw.js"):
+    for name in ("app.js", "bridge.js", "sw.js", "calc-engine.js", "desmos.js"):
         (OUT / name).write_text(pages[name], encoding="utf-8")
     vendor = web / "vendor"
     if vendor.exists():
