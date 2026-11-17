@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BC Helper · 微积分 BC 分步计算器</title>
+<script>
+  (function () {
+    var t = "auto";
+    try { t = localStorage.getItem("bc-theme") || "auto"; } catch (e) {}
+    if (t === "auto") {
+      t = window.matchMedia && window.matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark";
+    }
+    document.documentElement.setAttribute("data-theme", t);
+  })();
+</script>
+<link rel="stylesheet" href="vendor/katex/katex.min.css">
+<script defer src="vendor/katex/katex.min.js"></script>
+<style>
+:root {
+  --bg:#0b0f14; --panel:#151c25; --panel2:#1e2732; --inset:#0e1620;
+  --accent:#4ea1ff; --accent2:#ffb454; --text:#e6edf3; --muted:#8b98a5;
+  --border:#2b3644; --ok:#3fb950; --bad:#ff6b6b; --on-accent:#08121f;
+}
+:root[data-theme="light"] {
+  --bg:#ffffff; --panel:#ffffff; --panel2:#f6f8fa; --inset:#f6f8fa;
+  --accent:#2f74b5; --accent2:#a8621c; --text:#1f2328; --muted:#5f6b76;
+  --border:#d9dee3; --ok:#1a7f37; --bad:#cf222e; --on-accent:#ffffff;
+}
+* { box-sizing:border-box; }
+[hidden] { display:none !important; }
+html,body { min-height:100%; }
+body {
+  margin:0; background:var(--bg); color:var(--text); line-height:1.6;
+  font-family:-apple-system,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+  display:flex; flex-direction:column; min-height:100vh;
+}
+header {
+  padding:18px 24px; border-bottom:1px solid var(--border); flex:0 0 auto;
+  display:flex; align-items:center; justify-content:space-between; gap:16px;
+}
+header h1 { margin:0; font-size:20px; letter-spacing:.5px; }
+header p { margin:4px 0 0; font-size:13px; color:var(--muted); }
+main { flex:1; width:100%; max-width:1120px; margin:0 auto; padding:20px 24px 36px; }
+.engine-box { background:var(--inset); border:1px solid var(--border); border-radius:10px; padding:10px 14px; margin-bottom:16px; font-size:13px; color:var(--muted); }
+.engine-box.ready { color:var(--ok); border-color:var(--ok); }
+.engine-box.error { color:var(--bad); border-color:var(--bad); }
+.track { height:4px; background:var(--panel2); border-radius:999px; margin-top:8px; overflow:hidden; }
+#engineBar { height:100%; width:0; background:var(--accent); transition:width .2s ease; }
+.mode-tabs { display:flex; gap:10px; margin-bottom:18px; }
+.mode-tab {
+  flex:0 0 auto; padding:10px 22px; border-radius:999px; border:1px solid var(--border);
+  background:var(--panel); color:var(--text); cursor:pointer; font-size:15px;
+}
+.mode-tab small { display:block; font-size:11px; color:var(--muted); }
+.mode-tab.active { background:var(--accent); color:var(--on-accent); border-color:var(--accent); }
+.mode-tab.active small { color:var(--on-accent); opacity:.85; }
+.workspace { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1.15fr); gap:18px; align-items:start; }
+.card { background:var(--panel); border:1px solid var(--border); border-radius:14px; padding:20px; min-width:0; }
+.card h2 { margin:0 0 16px; font-size:16px; }
+label { display:block; font-size:13px; color:var(--muted); margin-bottom:10px; }
+input[type=text], select {
+  width:100%; margin-top:6px; background:var(--inset); color:var(--text);
+  border:1px solid var(--border); border-radius:9px; padding:10px 12px;
+  font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; font-size:15px;
+}
+input[type=text]:focus, select:focus { outline:2px solid var(--accent); outline-offset:1px; }
+.row { display:flex; gap:12px; }
+.row > * { flex:1; min-width:0; }
+.hint { font-size:12px; color:var(--muted); margin:10px 0 16px; }
+.examples { margin:16px 0; }
+.examples-title { font-size:12px; color:var(--muted); margin-bottom:8px; }
+.chips { display:flex; flex-wrap:wrap; gap:8px; }
+.chip {
+  border:1px solid var(--border); background:var(--panel2); color:var(--text);
+  border-radius:999px; padding:5px 12px; font-size:12px; cursor:pointer;
+}
+.chip:hover { border-color:var(--accent); color:var(--accent); }
+button.primary {
+  width:100%; padding:11px 18px; border:none; border-radius:10px; cursor:pointer;
+  background:var(--accent); color:var(--on-accent); font-size:15px; font-weight:600;
+}
+button.ghost {
+  background:var(--panel2); color:var(--text); border:1px solid var(--border);
+  border-radius:9px; padding:8px 14px; cursor:pointer; font-size:13px;
+}
+button.ghost:hover { border-color:var(--accent); color:var(--accent); }
+#themeToggle { background:transparent; color:var(--text); border:1px solid var(--border); border-radius:9px; padding:6px 12px; cursor:pointer; font-size:13px; }
+.answer {
+  background:var(--inset); border-radius:11px; padding:18px; min-height:72px;
+  font-size:18px; overflow-x:auto; white-space:nowrap;
+}
+.answer.placeholder { color:var(--muted); font-size:14px; white-space:normal; }
+.secondary { margin-top:8px; font-size:13px; color:var(--muted); overflow-x:auto; white-space:nowrap; }
+.steps-title { margin:20px 0 10px; font-size:14px; }
+.step {
+  border-left:2px solid var(--accent); padding:8px 0 8px 14px; margin-bottom:12px;
+}
+.step .rule { font-size:12px; color:var(--accent2); }
+.step .formula { font-size:12px; color:var(--muted); margin:2px 0 6px; }
+.step .flow { font-size:14px; overflow-x:auto; white-space:nowrap; }
+.answer, .secondary, .step .flow { scrollbar-width:none; }
+.answer::-webkit-scrollbar, .secondary::-webkit-scrollbar, .step .flow::-webkit-scrollbar { display:none; }
+.step .arrow { color:var(--muted); margin:0 8px; }
+.step .note { font-size:12px; color:var(--muted); margin-top:5px; }
+.result-actions { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-top:20px; flex-wrap:wrap; }
+.result-actions span { font-size:12px; color:var(--muted); }
+.error-box { background:var(--inset); border-left:3px solid var(--bad); padding:12px 14px; color:var(--bad); border-radius:8px; }
+footer { border-top:1px solid var(--border); padding:14px 24px; font-size:12px; color:var(--muted); text-align:center; }
+@media (max-width:900px) {
+  .workspace { grid-template-columns:1fr; }
+  main { padding:16px; }
+}
+@media print {
+  :root, :root[data-theme="light"] { --bg:#ffffff; --text:#111111; --muted:#555555; --border:#dddddd; --inset:#ffffff; }
+  body { background:#ffffff !important; color:#111111 !important; }
+  header, footer, .mode-tabs, .engine-box, #inputPanel, .result-actions { display:none !important; }
+  main { max-width:none; padding:0; }
+  .card { border:none; padding:0; }
+  .answer { border:1px solid #dddddd; }
+  .step { break-inside:avoid; }
+}
+</style>
+</head>
+<body>
+<header>
+  <div>
+    <h1>BC Helper</h1>
+    <p>微积分 BC 分步计算器 · 求导 (derivative) / 积分 (integral)</p>
+  </div>
+  <button id="themeToggle" type="button">切换主题</button>
+</header>
+<main>
+  <div id="engineBox" class="engine-box">
+    <div id="engineStatus">正在加载计算引擎（首次约需十几秒，之后秒回）…</div>
+    <div class="track"><div id="engineBar"></div></div>
+  </div>
+
+  <div class="mode-tabs" role="tablist">
+    <button class="mode-tab active" type="button" data-mode="derivative">求导<small>Derivative</small></button>
+    <button class="mode-tab" type="button" data-mode="integral">积分<small>Integral</small></button>
+  </div>
+
+  <div class="workspace">
+    <section class="card" id="inputPanel">
+      <h2>输入</h2>
+      <label>f(x) =
+        <input id="expr" type="text" value="x^2*sin(x)+e^(2x)" spellcheck="false" autocomplete="off">
+      </label>
+
+      <div id="derivativeControls">
+        <div class="row">
+          <label>阶数 (order)
+            <select id="order">
+              <option value="1" selected>1</option><option value="2">2</option>
+              <option value="3">3</option><option value="4">4</option>
+              <option value="5">5</option>
+            </select>
+          </label>
+          <label>在 x = a 处求值（可留空）
+            <input id="at" type="text" placeholder="例如 1 或 pi/2" spellcheck="false">
+          </label>
+        </div>
+      </div>
+
+      <div id="integralControls" hidden>
+        <div class="row">
+          <label>类型 (type)
+            <select id="kind">
+              <option value="indefinite" selected>不定积分 (indefinite)</option>
+              <option value="definite">定积分 (definite)</option>
+            </select>
+          </label>
+          <label>方法偏好 (method)
+            <select id="method">
+              <option value="auto" selected>自动 (auto)</option>
+              <option value="substitution">换元 (u-substitution)</option>
+              <option value="parts">分部 (integration by parts)</option>
+            </select>
+          </label>
+        </div>
+        <div class="row" id="boundsRow" hidden>
+          <label>下限 a
+            <input id="lower" type="text" value="0" spellcheck="false">
+          </label>
+          <label>上限 b
+            <input id="upper" type="text" value="2" spellcheck="false">
+          </label>
+        </div>
+      </div>
+
+      <label style="display:flex;align-items:center;gap:8px;margin-top:14px;">
+        <input id="showSteps" type="checkbox" checked style="width:auto;margin:0;">
+        显示分步推导 (show steps)
+      </label>
+
+      <p class="hint">支持 x、^、sin/cos/tan、e^x、ln(x)、sqrt(x)、pi；也接受 2x、sin x 这类省略写法。</p>
+
+      <div class="examples">
+        <div class="examples-title">一键示例 (worked examples)</div>
+        <div class="chips" id="examples"></div>
+      </div>
+
+      <button id="compute" class="primary" type="button" disabled>计算</button>
+    </section>
+
+    <section class="card" id="resultPanel">
+      <h2>结果</h2>
+      <div id="answerBox" class="answer placeholder">还没计算。填好左边，点「计算」。</div>
+      <div id="secondaryBox" class="secondary" hidden></div>
+      <div id="stepsBox"></div>
+      <div class="result-actions">
+        <button id="printPdf" class="ghost" type="button">导出 PDF</button>
+        <span>关键概念保留英文原名，方便对照课本。</span>
+      </div>
+    </section>
+  </div>
+</main>
+<footer>BC Helper · 本地计算，不上传任何表达式 · 引擎由 SymPy 驱动</footer>
+
+<script src="core_bundle.js"></script>
+<script src="bridge.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
