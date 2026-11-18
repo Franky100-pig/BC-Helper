@@ -15,6 +15,7 @@ const ids = articles.map((a) => a.id);
 assert.equal(new Set(ids).size, ids.length, "讲义 id 重复");
 const catIds = new Set(notes.categories.map((c) => c.id));
 const required = [
+  "chain-layers", "implicit-rates", "log-diff", "inverse-deriv", "param-polar-deriv",
   "u-sub", "parts", "trig-int", "partial-frac", "var-bounds", "bounds-direct",
   "area-volume", "improper", "param-polar", "diffeq", "average-accum",
 ];
