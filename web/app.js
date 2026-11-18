@@ -229,6 +229,7 @@ function examExpr() { return $("calcExpr").textContent.trim() || "0"; }
 function updateExamScreen() {
   $("calcExpr").textContent = exam.expr || "0";
   $("angleInd").textContent = exam.deg ? "DEG" : "RAD";
+  if ($("graphAngle")) $("graphAngle").textContent = exam.deg ? "DEG" : "RAD";
   $("fmtInd").textContent = exam.frac ? "D/C" : "F";
   $("ansInd").textContent = window.__bcAns == null ? "0" : String(window.__bcAns).slice(0, 14);
 }
@@ -259,6 +260,18 @@ function equalPress() {
   updateExamScreen();
 }
 
+/* 切角度 / 分数格式后，把当前表达式按新模式重算一遍，
+ * 否则计算器和 Desmos 会显示不同单位下的两个结果（用户截图里的 DEG/RAD 不一致）。 */
+function recomputeCurrent() {
+  if (!window.BCCalc || typeof window.BCCalc.evaluate !== "function") return false;
+  const probe = window.BCCalc.evaluate(exam.expr, {
+    deg: exam.deg, frac: exam.frac, ans: window.__bcAns,
+  });
+  if (!probe.ok) return false;
+  equalPress();
+  return true;
+}
+
 function insertText(text) {
   if (exam.expr === "0" || exam.expr === "") exam.expr = "";
   exam.expr += text;
@@ -280,9 +293,13 @@ function examKey(action) {
   } else if (action === "angle") {
     exam.deg = !exam.deg; saveExam(); updateExamScreen();
     if (graphInited && window.BCGraph) window.BCGraph.setExpression(null, exam.deg, exam.expr);
-    graphStatus("角度制已切换为 " + (exam.deg ? "DEG" : "RAD"), "ok");
+    const ok = recomputeCurrent();
+    graphStatus("已切到 " + (exam.deg ? "DEG" : "RAD") +
+      (ok ? " · 当前表达式已按新单位重算" : " · 表达式未算完，按 = 重新计算"), ok ? "ok" : "warn");
   } else if (action === "frac") {
     exam.frac = !exam.frac; saveExam(); updateExamScreen();
+    const ok = recomputeCurrent();
+    if (!ok) graphStatus("显示格式已切换 · 按 = 刷新结果", "warn");
   }
 }
 
