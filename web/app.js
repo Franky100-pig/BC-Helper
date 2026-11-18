@@ -172,15 +172,14 @@ async function compute() {
   $("stepsBox").innerHTML = "";
   try {
     let res;
-    if (window.BC && window.BC.ready) {
+    if (window.BC && window.BC.ready && window.BC.dispatch) {
       res = window.BC.dispatch(payload);
     } else {
-      const resp = await fetch("/api/compute", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-      res = await resp.json();
+      // 分步骤推导依赖浏览器里的 SymPy 引擎。没有本地后端时不能假装能算，
+      // 给明确提示并引导到纯 JS 的考场模式（不依赖 SymPy，离线也能用）。
+      renderError("推导引擎还没就绪（首次加载约十几秒，之后自动秒开）。" +
+        "可点上方「考场模式」先用计算器算数值，或稍候重试。");
+      return;
     }
     renderResult(res);
   } catch (err) {
@@ -379,8 +378,32 @@ function initEvents() {
   });
 }
 
+/* 小讲义里的静态公式：app.js 普通 script 比 defer 的 KaTeX 先执行，
+ * 所以等 katex 就绪后再渲染，未就绪就轮询等一会。 */
+function renderNotesMath() {
+  const nodes = document.querySelectorAll("#viewNotes .tex, #viewNotes .tex-display");
+  if (!nodes.length) return true;
+  if (!window.katex) return false;
+  nodes.forEach((el) => {
+    if (el.dataset.rendered) return;
+    try {
+      window.katex.render(el.textContent, el, {
+        throwOnError: false,
+        displayMode: el.classList.contains("tex-display"),
+      });
+      el.dataset.rendered = "1";
+    } catch (e) {}
+  });
+  return true;
+}
+
 syncControls();
 initEvents();
 initExamEvents();
 updateExamScreen();
 if (exam.view === "exam") switchView("exam");
+
+let notesMathTries = 0;
+const notesMathTimer = setInterval(() => {
+  if (renderNotesMath() || ++notesMathTries > 40) clearInterval(notesMathTimer);
+}, 150);

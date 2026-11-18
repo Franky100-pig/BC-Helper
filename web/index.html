@@ -65,16 +65,34 @@ main { flex:1; width:100%; max-width:1120px; margin:0 auto; padding:20px 24px 36
 .cache-status { font-size:12px; margin-top:6px; color:var(--muted); }
 .cache-status.ready { color:var(--ok); }
 .cache-status.warn { color:var(--accent2); }
-.notes-card { max-width:760px; margin:0 auto; }
+.notes-card { max-width:820px; margin:0 auto; }
 .notes-card h2 { font-size:20px; }
 .notes-card > p { color:var(--muted); font-size:14px; }
-.notes-placeholder {
-  margin:24px 0; padding:40px 24px; text-align:center;
-  border:1px dashed var(--border); border-radius:14px; background:var(--inset);
+.notes-lead { line-height:1.8; margin-bottom:24px; }
+.note-section { margin:26px 0 30px; padding-top:20px; border-top:1px solid var(--border); }
+.note-section:first-of-type { border-top:none; padding-top:0; }
+.note-section h3 { font-size:17px; margin:0 0 6px; color:var(--text); }
+.note-section h3 .en { font-size:12px; color:var(--muted); font-weight:400; margin-left:6px; }
+.note-section p { font-size:13.5px; color:var(--muted); line-height:1.8; margin:8px 0; }
+.note-section p b { color:var(--text); }
+.formula-block {
+  background:var(--inset); border:1px solid var(--border); border-radius:10px;
+  padding:14px 16px; margin:12px 0; text-align:center; font-size:16px;
+  overflow-x:auto; white-space:nowrap; scrollbar-width:none;
 }
-.notes-placeholder-icon { font-size:34px; color:var(--accent); line-height:1; }
-.notes-placeholder h3 { margin:14px 0 8px; font-size:16px; }
-.notes-placeholder p { margin:0; color:var(--muted); font-size:13px; }
+.formula-block::-webkit-scrollbar { display:none; }
+.formula-block .katex { color:var(--text); }
+.note-table { width:100%; border-collapse:collapse; margin:12px 0; font-size:13px; }
+.note-table th, .note-table td { border:1px solid var(--border); padding:8px 12px; text-align:left; }
+.note-table th { background:var(--panel2); color:var(--text); font-weight:600; }
+.note-table td.tex-cell { font-size:13px; overflow-x:auto; white-space:nowrap; scrollbar-width:none; }
+.note-table td.tex-cell::-webkit-scrollbar { display:none; }
+.note-table .tex { color:var(--text); }
+.note-callout {
+  border-left:3px solid var(--accent2); background:var(--inset);
+  padding:10px 14px; border-radius:0 8px 8px 0; font-size:13px; color:var(--muted); margin:14px 0;
+}
+.note-callout b { color:var(--accent2); }
 .exam-grid { display:grid; grid-template-columns:minmax(330px,420px) minmax(0,1fr); gap:18px; align-items:start; }
 .calc-body {
   background:linear-gradient(160deg,#3c4450,#252c36); border:1px solid #1b2129;
@@ -376,13 +394,50 @@ footer { border-top:1px solid var(--border); padding:14px 24px; font-size:12px; 
   <div id="viewNotes" hidden>
     <section class="card notes-card">
       <h2>小讲义 (Lecture Notes)</h2>
-      <p>这里会放微积分 BC 的配套小讲义：把常考的求导 / 积分方法写成能对照课本的 short notes，每篇配一个小例子和常见陷阱。</p>
-      <div class="notes-placeholder">
-        <div class="notes-placeholder-icon">✎</div>
-        <h3>内容整理中 · coming soon</h3>
-        <p>计划收录：链式法则的识别技巧、换元与分部的选择策略、定积分的几何直觉、考场常见失分点。</p>
+      <p class="notes-lead">微积分 BC 的两块地基，其实就是一对互逆的操作：<b>求导</b>把函数拆成「瞬时变化率」，<b>积分</b>把变化率累积回「总量」。本页先放最核心的定义，公式符号保持英文原样，读法用中文标注。</p>
+
+      <div class="note-section">
+        <h3>1 · 导数的定义 <span class="en">Definition of the Derivative</span></h3>
+        <p>导数衡量的是函数在某一点的<b>瞬时变化率 (instantaneous rate of change)</b>。它来自割线斜率在两点无限靠近时的极限：</p>
+        <div class="formula-block tex-display">f'(x)=\lim_{h\to 0}\frac{f(x+h)-f(x)}{h}</div>
+        <p>等价地，令 <span class="tex">t\to x</span>，也能写成 <span class="tex">f'(x)=\lim_{t\to x}\dfrac{f(t)-f(x)}{t-x}</span>。这个极限存在，就说函数在 <span class="tex">x</span> 处<b>可导 (differentiable)</b>。</p>
+        <p><b>几何意义：</b><span class="tex">f'(a)</span> 是曲线 <span class="tex">y=f(x)</span> 在点 <span class="tex">(a,f(a))</span> 处<b>切线斜率 (slope of the tangent line)</b>；<b>物理意义：</b>若 <span class="tex">s(t)</span> 是位移，则 <span class="tex">s'(t)</span> 是瞬时速度。</p>
+        <div class="note-callout"><b>常见坑：</b>可导一定连续，但连续不一定可导 —— 尖点 (corner)、竖直切线、跳跃处都可能连续却不可导，例如 <span class="tex">f(x)=|x|</span> 在 <span class="tex">x=0</span>。</div>
       </div>
-      <p class="hint">现在先用左边两个视图：分步计算看推导过程，考场模式练手速。讲义上线后在这里直接读。</p>
+
+      <div class="note-section">
+        <h3>2 · 基本求导法则 <span class="en">Basic Differentiation Rules</span></h3>
+        <p>考试里几乎不用每次回到极限定义，靠下面几条法则组合即可。分步计算视图会把每一步用到的法则标出来。</p>
+        <table class="note-table">
+          <thead><tr><th>法则 Rule</th><th>公式 Formula</th></tr></thead>
+          <tbody>
+            <tr><td>幂法则 (power rule)</td><td class="tex-cell"><span class="tex">\dfrac{d}{dx}x^{n}=n\,x^{n-1}</span></td></tr>
+            <tr><td>乘积法则 (product rule)</td><td class="tex-cell"><span class="tex">(fg)'=f'g+fg'</span></td></tr>
+            <tr><td>商法则 (quotient rule)</td><td class="tex-cell"><span class="tex">\left(\dfrac{f}{g}\right)'=\dfrac{f'g-fg'}{g^{2}}</span></td></tr>
+            <tr><td>链式法则 (chain rule)</td><td class="tex-cell"><span class="tex">\dfrac{d}{dx}f(g(x))=f'(g(x))\,g'(x)</span></td></tr>
+          </tbody>
+        </table>
+        <p>常用基本导数：<span class="tex">(\sin x)'=\cos x</span>，<span class="tex">(\cos x)'=-\sin x</span>，<span class="tex">(e^{x})'=e^{x}</span>，<span class="tex">(\ln x)'=\dfrac{1}{x}</span>。</p>
+      </div>
+
+      <div class="note-section">
+        <h3>3 · 积分的定义 <span class="en">Definition of the Integral</span></h3>
+        <p><b>不定积分 (indefinite integral)</b> 是求导的逆操作：已知导数 <span class="tex">f</span>，找回原函数 <span class="tex">F</span>，因为常数求导会消失，所以结果带一个<b>积分常数 (constant of integration)</b> <span class="tex">C</span>：</p>
+        <div class="formula-block tex-display">F'(x)=f(x)\quad\Longrightarrow\quad\int f(x)\,dx=F(x)+C</div>
+        <p><b>定积分 (definite integral)</b> 则是把区间 <span class="tex">[a,b]</span> 切成无数细条、累加起来的极限 —— <b>黎曼和 (Riemann sum)</b>：</p>
+        <div class="formula-block tex-display">\int_{a}^{b}f(x)\,dx=\lim_{n\to\infty}\sum_{i=1}^{n}f(x_i)\,\Delta x</div>
+        <p>几何上（函数非负时）它等于曲线下的面积；更准确说是<b>有向面积 (signed area)</b>，x 轴下方算负。</p>
+      </div>
+
+      <div class="note-section">
+        <h3>4 · 微积分基本定理 <span class="en">Fundamental Theorem of Calculus</span></h3>
+        <p>这条定理把「求导」和「积分」真正接了起来，是 BC 的核心。它说明求定积分不必真的去算无穷和，找到原函数代值相减即可：</p>
+        <div class="formula-block tex-display">\int_{a}^{b}f(x)\,dx=F(b)-F(a)\qquad\big(F'=f\big)</div>
+        <p>常用基本积分公式：<span class="tex">\int x^{n}dx=\dfrac{x^{n+1}}{n+1}+C\ (n\neq-1)</span>，<span class="tex">\int\dfrac{1}{x}dx=\ln|x|+C</span>，<span class="tex">\int e^{x}dx=e^{x}+C</span>。</p>
+        <div class="note-callout"><b>怎么读：</b>微分是「把整体切成碎片看变化」，积分是「把碎片拼回整体看累积」，FTC 说这两件事互为逆过程。这就是整门微积分的主线。</div>
+      </div>
+
+      <p class="hint">这份讲义会持续补充：链式法则的识别技巧、换元与分部的选择策略、定积分的几何直觉等，后续可在这里继续加篇。</p>
     </section>
   </div>
 </main>
