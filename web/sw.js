@@ -1,4 +1,4 @@
-/* bc-static-v2：首次访问把页面 + KaTeX + 浏览器里的 Python 引擎全部写进 Cache Storage。
+/* bc-static：首次访问把页面 + KaTeX + 浏览器里的 Python 引擎全部写进 Cache Storage。
  * 策略：
  *  - install 预缓存应用外壳（小文件），skipWaiting + claim 立刻接管
  *  - 导航请求 network-first（更新能生效），断网回退到缓存的 index.html
