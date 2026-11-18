@@ -19,6 +19,7 @@ for (let i = 1; i <= 10; i++) {
   assert.ok(notes.categories.some((c) => c.id === "u" + i), "缺少官方 Unit " + i);
 }
 const required = [
+  "limit-instant", "limit-def", "limit-manip", "limit-procedure", "squeeze",
   "chain-layers", "implicit-rates", "related-rates", "log-diff", "inverse-deriv", "param-polar-deriv",
   "u-sub", "parts", "trig-int", "partial-frac", "var-bounds", "bounds-direct",
   "area-volume", "improper", "param-polar", "diffeq", "average-accum",
@@ -58,9 +59,11 @@ articles.forEach((a) => {
   });
 });
 
-// 总览按官方主题顺序显示覆盖状态：Unit 1 全待补，Unit 6 已覆盖 10/14
+// 总览按官方主题顺序显示覆盖状态：Unit 1 已覆盖 5/16，Unit 6 已覆盖 10/14
 const u1Roadmap = notes.blocksHtml(notes.find("u1-overview").blocks);
-assert.equal((u1Roadmap.match(/roadmap-item todo/g) || []).length, 16, "Unit 1 待补数量不符");
+assert.equal((u1Roadmap.match(/roadmap-item done/g) || []).length, 5, "Unit 1 覆盖数量不符");
+assert.equal((u1Roadmap.match(/roadmap-item todo/g) || []).length, 11, "Unit 1 待补数量不符");
+assert.ok(u1Roadmap.includes('data-jump="squeeze"'), "Unit 1 总览缺少跳转到夹逼定理的按钮");
 const u6Roadmap = notes.blocksHtml(notes.find("u6-overview").blocks);
 assert.equal((u6Roadmap.match(/roadmap-item done/g) || []).length, 10, "Unit 6 覆盖数量不符");
 assert.ok(u6Roadmap.includes('data-jump="u-sub"'), "总览缺少跳转到已覆盖讲义的按钮");
