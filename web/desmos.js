@@ -4,13 +4,16 @@
  * 优先用 Desmos Graphing Calculator API；脚本加载失败或超时（大陆网络常见）
  * 时自动降级到内置 canvas 绘图，保证断网也有图看。
  */
-const DESMOS_SCRIPT = "https://www.desmos.com/api/v1.10/calculator.js?apiKey=dcb31709b452b1cf9dc26972add0fda6&lang=zh-CN";
+// Desmos Graphing Calculator API key（用户自有 key，替换官方 demo key 以去掉试用横幅）。
+const DESMOS_API_KEY = "85dc7bee976f4d9dae05016023ae80f2";
+const DESMOS_SCRIPT = "https://www.desmos.com/api/v1.10/calculator.js?apiKey=" + DESMOS_API_KEY + "&lang=zh-CN";
 const DESMOS_TIMEOUT = 9000;
 
 const graph = {
   instance: null,
   mode: "loading", // loading | desmos | canvas
   latex: "y=x^2",
+  src: "x^2", // 原始表达式（绘图用），与 latex 分开保存
   deg: false,
   canvasView: { xmin: -10, xmax: 10, ymin: -6, ymax: 6 },
 };
@@ -76,8 +79,10 @@ function useCanvas(msg) {
   graphStatus(msg, "warn");
 }
 
-function setGraphExpression(latex, deg) {
+function setGraphExpression(latex, deg, src) {
+  // latex 为 null 时只更新角度制，必须复用上一次的 LaTeX，否则曲线会被清空。
   graph.latex = latex || graph.latex;
+  if (typeof src === "string" && src.trim()) graph.src = src;
   if (typeof deg === "boolean") graph.deg = deg;
   if (graph.mode === "desmos" && graph.instance) {
     try {
@@ -85,7 +90,7 @@ function setGraphExpression(latex, deg) {
     } catch (e) {}
     graph.instance.setExpression({
       id: "bc-f",
-      latex: latex,
+      latex: graph.latex,
       color: "#2f74b5",
       lineWidth: 3,
     });
@@ -161,8 +166,12 @@ function drawCanvas(blank) {
   }
 
   if (blank) return;
-  const expr = document.getElementById("calcInput");
-  const src = expr ? expr.value.trim() : "";
+  // 优先用 app 传入的表达式；兜底读液晶屏文本（元素 id 是 calcExpr，不是 calcInput）。
+  const expr = document.getElementById("calcExpr");
+  const fromScreen = expr ? (expr.textContent || "").trim() : "";
+  const raw = graph.src || fromScreen;
+  let src = raw;
+  try { src = window.BCCalc.graphSource ? window.BCCalc.graphSource(raw) : raw; } catch (e) {}
   if (!src) return;
   let f;
   try {
