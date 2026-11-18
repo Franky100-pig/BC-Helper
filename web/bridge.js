@@ -68,7 +68,10 @@ function setProgress(pct) {
   if (bar) bar.style.width = Math.min(100, Math.max(0, pct)) + "%";
 }
 
-function loadScript(url) {
+/* 不能叫 loadScript：desmos.js 也定义了同名全局函数且后加载会覆盖它，
+ * 旧名会让主线程兜底启动把 undefined 当 timeout 传给 Desmos 的版本，
+ * 结果 setTimeout(..., 0) 先触发，所有 Pyodide 源都被误判为加载失败。 */
+function loadPyodideScript(url) {
   return new Promise((resolve) => {
     let done = false;
     const script = document.createElement("script");
@@ -203,7 +206,7 @@ function bootInline() {
     for (const base of PYODIDE_SOURCES) {
       if (!loader) {
         setStatus("正在加载引擎脚本：" + (base.indexOf("http") === 0 ? new URL(base).host : "本站"));
-        if (!(await loadScript(base + "pyodide.js")) || typeof window.loadPyodide !== "function") {
+        if (!(await loadPyodideScript(base + "pyodide.js")) || typeof window.loadPyodide !== "function") {
           lastError = "无法加载 " + base + "pyodide.js";
           continue;
         }
@@ -293,8 +296,12 @@ function boot() {
       bootPromise = bootInline();
     }
   }
-  bootPromise.then(() => { bootPromise = null; }, () => { bootPromise = null; });
-  return bootPromise;
+  // worker 失败回退时会在 onerror 里替换 bootPromise；只清理自己那一次，
+  // 否则旧 promise 的微任务会把新的 inline boot 引用抹掉，导致重复启动。
+  const started = bootPromise;
+  const clearIfCurrent = () => { if (bootPromise === started) bootPromise = null; };
+  started.then(clearIfCurrent, clearIfCurrent);
+  return started;
 }
 
 window.BC.retry = boot;

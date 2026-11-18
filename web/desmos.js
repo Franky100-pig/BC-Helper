@@ -15,6 +15,7 @@ const graph = {
   latex: "y=x^2",
   src: "x^2", // 原始表达式（绘图用），与 latex 分开保存
   deg: false,
+  cleared: false, // 用户点「清空」后，缩放/重绘/切主题不能把曲线偷偷画回来
   canvasView: { xmin: -10, xmax: 10, ymin: -6, ymax: 6 },
 };
 
@@ -88,6 +89,8 @@ function useCanvas(msg) {
 
 function setGraphExpression(latex, deg, src) {
   // latex 为 null 时只更新角度制，必须复用上一次的 LaTeX，否则曲线会被清空。
+  // latex 为 null 表示只同步角度制，此时保留 cleared 状态。
+  if (latex !== null) graph.cleared = false;
   graph.latex = latex || graph.latex;
   if (typeof src === "string" && src.trim()) graph.src = src;
   if (typeof deg === "boolean") graph.deg = deg;
@@ -95,6 +98,7 @@ function setGraphExpression(latex, deg, src) {
     try {
       graph.instance.updateSettings({ degreeMode: graph.deg });
     } catch (e) {}
+    if (graph.cleared) return;
     graph.instance.setExpression({
       id: "bc-f",
       latex: graph.latex,
@@ -107,6 +111,7 @@ function setGraphExpression(latex, deg, src) {
 }
 
 function applyGraph() {
+  if (graph.cleared) return;
   if (graph.mode === "desmos" && graph.instance) {
     graph.instance.setExpression({ id: "bc-f", latex: graph.latex, color: "#2f74b5", lineWidth: 3 });
   } else if (graph.mode === "canvas") {
@@ -115,6 +120,7 @@ function applyGraph() {
 }
 
 function clearGraph() {
+  graph.cleared = true;
   if (graph.mode === "desmos" && graph.instance) graph.instance.removeExpression({ id: "bc-f" });
   else drawCanvas(true);
 }
@@ -172,7 +178,7 @@ function drawCanvas(blank) {
     if (Math.abs(x) > 1e-9) ctx.fillText(String(+x.toFixed(2)), X(x) + 3, Y(0) + 14);
   }
 
-  if (blank) return;
+  if (blank || graph.cleared) return;
   // 优先用 app 传入的表达式；兜底读液晶屏文本（元素 id 是 calcExpr，不是 calcInput）。
   const expr = document.getElementById("calcExpr");
   const fromScreen = expr ? (expr.textContent || "").trim() : "";

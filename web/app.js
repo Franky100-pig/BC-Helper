@@ -211,7 +211,7 @@ function toggleTheme() {
 
 /* ---------------- 考场模式：991 风格计算器 + Desmos ---------------- */
 const EXAM_STORE = "bc-exam-v1";
-const DEFAULT_EXAM = { expr: "sin(30)", deg: true, frac: false, ans: 0, view: "study" };
+const DEFAULT_EXAM = { expr: "sin(30)", deg: true, frac: false, ans: 0, result: "0", view: "study" };
 
 function loadExam() {
   try { return Object.assign({}, DEFAULT_EXAM, JSON.parse(localStorage.getItem(EXAM_STORE) || "{}")); }
@@ -244,6 +244,7 @@ function equalPress() {
     out.textContent = res.text;
     window.__bcAns = res.value;
     exam.ans = res.value;
+    exam.result = res.text;
     saveExam();
     if (graphInited) {
       try {
@@ -256,20 +257,27 @@ function equalPress() {
       ? "含变量 x · 试试 d/dx(函数, 点) 或 ∫(函数, 下限, 上限)"
       : "Error · " + res.error;
     out.textContent = msg;
+    exam.result = msg;
+    saveExam();
   }
   updateExamScreen();
 }
 
 /* 切角度 / 分数格式后，把当前表达式按新模式重算一遍，
  * 否则计算器和 Desmos 会显示不同单位下的两个结果（用户截图里的 DEG/RAD 不一致）。 */
+function hasAnsRef() { return /\bans\b/i.test(exam.expr || ""); }
+
+// 返回 "ok" / "ans" / "invalid"：含 Ans 的表达式不能自动重算，
+// 否则会把上一次结果又喂回去，Ans 变成 6→7→8 这种自增。
 function recomputeCurrent() {
-  if (!window.BCCalc || typeof window.BCCalc.evaluate !== "function") return false;
+  if (hasAnsRef()) return "ans";
+  if (!window.BCCalc || typeof window.BCCalc.evaluate !== "function") return "invalid";
   const probe = window.BCCalc.evaluate(exam.expr, {
     deg: exam.deg, frac: exam.frac, ans: window.__bcAns,
   });
-  if (!probe.ok) return false;
+  if (!probe.ok) return "invalid";
   equalPress();
-  return true;
+  return "ok";
 }
 
 function insertText(text) {
@@ -281,7 +289,7 @@ function insertText(text) {
 
 function examKey(action) {
   if (action === "clear") {
-    exam.expr = ""; window.__bcAns = 0;
+    exam.expr = ""; window.__bcAns = 0; exam.result = "0";
     $("calcResult").className = "result";
     $("calcResult").textContent = "0";
     saveExam(); updateExamScreen();
@@ -293,17 +301,26 @@ function examKey(action) {
   } else if (action === "angle") {
     exam.deg = !exam.deg; saveExam(); updateExamScreen();
     if (graphInited && window.BCGraph) window.BCGraph.setExpression(null, exam.deg, exam.expr);
-    const ok = recomputeCurrent();
-    graphStatus("已切到 " + (exam.deg ? "DEG" : "RAD") +
-      (ok ? " · 当前表达式已按新单位重算" : " · 表达式未算完，按 = 重新计算"), ok ? "ok" : "warn");
+    const state = recomputeCurrent();
+    const detail = state === "ok" ? " · 当前表达式已按新单位重算"
+      : state === "ans" ? " · 含 Ans 的表达式按 = 重新计算"
+      : " · 表达式未算完，按 = 重新计算";
+    graphStatus("已切到 " + (exam.deg ? "DEG" : "RAD") + detail, state === "ok" ? "ok" : "warn");
   } else if (action === "frac") {
     exam.frac = !exam.frac; saveExam(); updateExamScreen();
-    const ok = recomputeCurrent();
-    if (!ok) graphStatus("显示格式已切换 · 按 = 刷新结果", "warn");
+    const state = recomputeCurrent();
+    if (state !== "ok") {
+      graphStatus(state === "ans" ? "含 Ans 的表达式按 = 刷新结果"
+        : "显示格式已切换 · 按 = 刷新结果", "warn");
+    }
   }
 }
 
 function switchView(view) {
+  // 从讲义切走时清掉 #notes/<id>，否则刷新会被旧 hash 强行带回讲义页。
+  if (view !== "notes" && noteIdFromHash()) {
+    history.replaceState(null, "", location.pathname + location.search);
+  }
   exam.view = view;
   saveExam();
   $("viewStudy").hidden = view !== "study";
@@ -481,6 +498,12 @@ syncControls();
 initEvents();
 initExamEvents();
 updateExamScreen();
+// 上次的计算结果直接恢复，避免屏幕显示 0、Ans 却是上次数值的错位。
+if (exam.result && exam.result !== "0") {
+  const saved = $("calcResult");
+  saved.textContent = exam.result;
+  saved.className = /^Error|含变量/.test(exam.result) ? "result error" : "result";
+}
 // 带 #notes/<id> 直接打开，或上次停在讲义页时，恢复讲义视图。
 if (noteIdFromHash() || exam.view === "notes") switchView("notes");
 else if (exam.view === "exam") switchView("exam");
