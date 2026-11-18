@@ -26,6 +26,7 @@ RULES = {
     "integral_log": "对数函数积分 (logarithmic integral)",
     "integral_arctan": "反正切积分 (arctangent integral)",
     "integral_direct": "基本积分公式 (basic integral formula)",
+    "back_substitute": "回代与合并 (back-substitute and combine)",
 }
 
 FORMULAS = {

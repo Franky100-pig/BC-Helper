@@ -31,6 +31,34 @@ def test_integral_substitution():
     assert result["answer"]["latex"].endswith("+ C")
 
 
+def test_integral_steps_show_equivalent_transformations():
+    """每一步的 before→after 必须是看得懂的等价变形，不能像丢因子或原样不动。"""
+    result = dispatch({
+        "op": "integral", "expr": "x^2*sqrt(x^3+1)",
+        "kind": "indefinite", "method": "substitution",
+    })
+    assert result["ok"]
+    steps = result["steps"]
+    sub = next(s for s in steps if s["rule"] == "substitution")
+    const = next(s for s in steps if s["rule"] == "constant_multiple")
+    power = next(s for s in steps if s["rule"] == "integral_power")
+
+    # 换元：after 应是换元后的积分 ∫(1/3)√u du，而不是把被积函数写成 "u = ..."
+    assert "\\int" in sub["after"]["latex"], "换元步没有显示换元后的积分"
+    assert "=" not in sub["after"]["latex"], "换元步的 after 不应是一句定义"
+    assert "u" in sub["after"]["latex"]
+
+    # 提常数：1/3 必须还在（只是从积分号内移到号外），不能凭空消失
+    assert "frac{1}{3}" in const["after"]["latex"] or "\\frac{1}{3}" in const["after"]["latex"], \
+        "提出常数后 1/3 不见了"
+    assert "\\int" in const["after"]["latex"], "提出常数后应显示为常数乘积分"
+
+    # 幂函数积分：必须显示积分结果，不能 √u → √u 原样不动
+    assert power["before"]["latex"] != power["after"]["latex"], "幂函数积分步没有变化"
+    assert "frac{3}{2}" in power["after"]["latex"] or "frac{2}{3}" in power["after"]["latex"], \
+        "幂函数积分步没有显示新的指数"
+
+
 def test_integral_parts():
     result = dispatch({"op": "integral", "expr": "x*ln(x)", "kind": "indefinite", "method": "parts"})
     assert result["ok"]

@@ -30,6 +30,41 @@ def _latex(expr):
     return sp.latex(expr) if expr is not None else ""
 
 
+def _text(expr):
+    """说明文字里用可读写法（x^3、1/3），不要把 LaTeX 源码直接摆给学生看。"""
+    return str(expr).replace("**", "^") if expr is not None else ""
+
+
+def _as_integral(expr, var):
+    """把「被积函数 + 变量」写成 ∫ expr dvar，供步骤的 before/after 使用。"""
+    if expr is None or var is None:
+        return fmt(expr)
+    return {
+        "latex": r"\int " + sp.latex(expr) + r"\,d" + sp.latex(var),
+        "text": "∫ " + sp.pretty(expr, use_unicode=True) + " d" + str(var),
+    }
+
+
+def _as_const_integral(constant, expr, var):
+    """常数 × ∫ expr dvar：常数提出积分号后仍要看得见。"""
+    if expr is None or var is None:
+        return _as_integral(expr, var)
+    return {
+        "latex": sp.latex(constant) + r"\int " + sp.latex(expr) + r"\,d" + sp.latex(var),
+        "text": str(constant) + "∫ " + sp.pretty(expr, use_unicode=True) + " d" + str(var),
+    }
+
+
+def _integrated(expr, var):
+    """基本积分规则的结果：∫ expr dvar 的原函数。"""
+    if expr is None or var is None:
+        return fmt(expr)
+    try:
+        return fmt(sp.integrate(expr, var))
+    except Exception:  # noqa: BLE001
+        return fmt(expr)
+
+
 def _walk(rule, steps, depth=0, preferred=()):
     if rule is None or len(steps) >= MAX_STEPS:
         return
@@ -60,10 +95,16 @@ def _walk(rule, steps, depth=0, preferred=()):
         dv = getattr(rule, "dv", None)
         variable = getattr(rule, "variable", None)
         v = sp.integrate(dv, variable) if dv is not None and variable is not None else None
+        # 分部公式是 ∫u dv = uv − ∫v du，剩下那个积分的被积函数是 v·u'，
+        # 不是 v 本身；之前写成 ∫v dx 会让人以为子步骤算错了。
+        du = sp.diff(u, variable) if u is not None and variable is not None else None
+        leftover = sp.simplify(v * du) if v is not None and du is not None else None
         steps.append(step(
-            "parts", label("parts"), fmt(rule.integrand),
-            fmt_text(f"u = {_latex(u)}, dv = {_latex(dv)}, v = {_latex(v)}"),
-            "分部积分：先凑出 u 和 dv，再处理剩下的积分。", depth, FORMULAS["parts"]
+            "parts", label("parts"),
+            _as_integral(rule.integrand, variable),
+            fmt_text(f"{_latex(u)}\\,{_latex(v)} - {_as_integral(leftover, variable)['latex']}"),
+            f"取 u = {_text(u)}，dv = {_text(dv)}，则 du = {_text(du)} dx、v = {_text(v)}；"
+            "分部积分后只需再算剩下那个较小的积分。", depth, FORMULAS["parts"]
         ))
         _walk(getattr(rule, "v_step", None), steps, depth + 1, preferred)
         _walk(getattr(rule, "second_step", None), steps, depth + 1, preferred)
@@ -74,37 +115,61 @@ def _walk(rule, steps, depth=0, preferred=()):
         u_func = getattr(rule, "u_func", None)
         variable = getattr(rule, "variable", None)
         du = sp.diff(u_func, variable) if u_func is not None and variable is not None else None
+        substep = getattr(rule, "substep", None)
+        # 换元后的被积函数从子规则读取（此时变量已是 u）；拿不到就退化成 ∫f(u)du。
+        new_integrand = getattr(substep, "integrand", None) if substep is not None else None
+        new_var = getattr(substep, "variable", None) or u_var
+        if new_integrand is None:
+            new_integrand = u_var
         steps.append(step(
-            "substitution", label("substitution"), fmt(rule.integrand),
-            fmt_text(f"u = {_latex(u_func)}"),
-            f"令 u = {_latex(u_func)}，则 du = {_latex(du)} dx。", depth,
+            "substitution", label("substitution"),
+            _as_integral(rule.integrand, variable),
+            _as_integral(new_integrand, new_var),
+            f"令 u = {_text(u_func)}，则 du = {_text(du)} dx，"
+            f"把 dx 一起换成 du 后得到右边这个更简单的积分。", depth,
             FORMULAS["substitution"]
         ))
-        _walk(getattr(rule, "substep", None), steps, depth + 1, preferred)
+        _walk(substep, steps, depth + 1, preferred)
         return
 
     if name in ("ConstantTimesRule", "ConstMulRule"):
+        constant = getattr(rule, "constant", "")
+        other = getattr(rule, "other", rule.integrand)
+        variable = getattr(rule, "variable", None)
         steps.append(step(
-            "constant_multiple", label("constant_multiple"), fmt(rule.integrand),
-            fmt(getattr(rule, "other", rule.integrand)),
-            f"把常数 {_latex(getattr(rule, 'constant', ''))} 提到积分号外。", depth
+            "constant_multiple", label("constant_multiple"),
+            _as_integral(rule.integrand, variable),
+            _as_const_integral(constant, other, variable),
+            f"把常数 {_text(constant)} 提到积分号外；它不会消失，最后要乘回结果。", depth
         ))
         _walk(getattr(rule, "substep", None), steps, depth + 1, preferred)
         return
 
     if name == "AddRule":
+        variable = getattr(rule, "variable", None)
+        substeps = list(getattr(rule, "substeps", []) or [])
+        parts = [_as_integral(getattr(s, "integrand", None), getattr(s, "variable", None) or variable)
+                 for s in substeps]
+        after = {
+            "latex": " + ".join(p["latex"] for p in parts) or _latex(rule.integrand),
+            "text": " + ".join(p["text"] for p in parts) or _latex(rule.integrand),
+        }
         steps.append(step(
-            "term_by_term", label("term_by_term"), fmt(rule.integrand),
-            fmt(rule.integrand), "把和式拆成几项，分别积分后再相加。", depth
+            "term_by_term", label("term_by_term"),
+            _as_integral(rule.integrand, variable), after,
+            "把和式拆成几项，分别积分后再相加。", depth
         ))
-        for sub in getattr(rule, "substeps", []):
+        for sub in substeps:
             _walk(sub, steps, depth + 1, preferred)
         return
 
     if name == "RewriteRule":
+        variable = getattr(rule, "variable", None)
+        rewritten = getattr(rule, "rewritten", rule.integrand)
         steps.append(step(
-            "integral_direct", label("integral_direct"), fmt(rule.integrand),
-            fmt(getattr(rule, "rewritten", rule.integrand)),
+            "integral_direct", label("integral_direct"),
+            _as_integral(rule.integrand, variable),
+            _as_integral(rewritten, variable),
             "先做恒等变形，再用基本积分公式。", depth
         ))
         _walk(getattr(rule, "substep", None), steps, depth + 1, preferred)
@@ -118,7 +183,14 @@ def _walk(rule, steps, depth=0, preferred=()):
         "integral_log": "对数函数积分：原函数含 x·ln x − x。",
         "integral_arctan": "形如 1/(a²+x²) 的积分得到反正切。",
     }.get(key, "套用基本积分公式。")
-    steps.append(step(key, label(key), fmt(rule.integrand), fmt(rule.integrand),
+    variable = getattr(rule, "variable", None)
+    if key == "integral_power" and isinstance(rule.integrand, sp.Pow):
+        power = rule.integrand.exp
+        note = (f"幂函数积分：指数 {_text(power)} 加 1 得 {_text(power + 1)}，"
+                f"再除以 {_text(power + 1)}。")
+    steps.append(step(key, label(key),
+                      _as_integral(rule.integrand, variable),
+                      _integrated(rule.integrand, variable),
                       note, depth))
 
 

@@ -32,7 +32,7 @@ def _derivative(payload, expr):
         value = sp.simplify(result.subs(X, point))
         steps.append(step(
             "evaluate", label("evaluate"), fmt(result), fmt(value),
-            f"把 x = {sp.latex(point)} 代入导数表达式。", 0
+            f"把 x = {str(point).replace('**', '^')} 代入导数表达式。", 0
         ))
         answer = fmt(value)
         secondary = fmt(result)
@@ -57,6 +57,22 @@ def _integral(payload, expr):
     method = payload.get("method", "auto")
     antiderivative, steps = integral_steps_for(expr, X, method)
 
+    # 换元 / 提常数后，最后一步只算出 u 的基本积分；补一步「乘回常数 + 代回 u」，
+    # 否则学生会看到 (2/3)u^(3/2) 却不知道怎么变成答案里的 2/9(x³+1)^(3/2)。
+    has_substitution = any(s["rule"] == "substitution" for s in steps)
+    if has_substitution and steps[-1]["rule"] in (
+        "constant_multiple", "integral_power", "integral_exp",
+        "integral_trig", "integral_log", "integral_arctan", "integral_direct",
+    ):
+        last_after = steps[-1]["after"]
+        final = fmt(antiderivative)
+        if last_after["latex"] != final["latex"]:
+            steps.append(step(
+                "back_substitute", label("back_substitute"), last_after, final,
+                "把前面提到积分号外的常数乘回，再把 u 换回原来的 x，"
+                "就得到最终的原函数（不定积分最后加 + C）。", 0
+            ))
+
     if kind == "definite":
         lower = constant(str(payload.get("lower", "")))
         upper = constant(str(payload.get("upper", "")))
@@ -65,7 +81,7 @@ def _integral(payload, expr):
             raise ValueError(ERRORS["no_integral"])
         steps.append(step(
             "ftc", label("ftc"), fmt(antiderivative), fmt(value),
-            f"F({sp.latex(upper)}) − F({sp.latex(lower)})。", 0, FORMULAS["ftc"]
+            f"F({str(upper).replace('**', '^')}) − F({str(lower).replace('**', '^')})。", 0, FORMULAS["ftc"]
         ))
         return {
             "ok": True,
