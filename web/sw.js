@@ -5,7 +5,7 @@
  *  - 其余同源 GET cache-first：第一次下载即缓存，之后秒开、可离线
  *  - 跨域（Desmos CDN）完全不碰，避免 opaque 响应污染缓存
  */
-const CACHE = "bc-static-v3";
+const CACHE = "bc-static-v4";
 
 // build_preview.py 会把带 ?v=hash 的真实资源 URL 注入这里。
 // 关键点：页面缓存的是 build 后的 index.html，它引用的是带版本号脚本；
@@ -17,8 +17,10 @@ const SHELL = [
   "./index.html",
   "./app.js",
   "./bridge.js",
+  "./engine-worker.js",
   "./calc-engine.js",
   "./desmos.js",
+  "./notes.js",
   "./sw.js",
   "./core_bundle.js",
   "./vendor/katex/katex.min.css",

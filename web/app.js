@@ -173,12 +173,12 @@ async function compute() {
   try {
     let res;
     if (window.BC && window.BC.ready && window.BC.dispatch) {
-      res = window.BC.dispatch(payload);
+      res = await window.BC.dispatch(payload);
     } else {
-      // 分步骤推导依赖浏览器里的 SymPy 引擎。没有本地后端时不能假装能算，
-      // 给明确提示并引导到纯 JS 的考场模式（不依赖 SymPy，离线也能用）。
-      renderError("推导引擎还没就绪（首次加载约十几秒，之后自动秒开）。" +
-        "可点上方「考场模式」先用计算器算数值，或稍候重试。");
+      // SymPy 在后台线程启动，页面不会卡；没就绪时给明确提示，
+      // 引导到纯 JS 的考场模式（不依赖 SymPy，离线也能用）。
+      renderError("推导引擎还在后台加载（首次约十几秒，之后自动秒开）。" +
+        "页面可继续用「考场模式」算数值，或稍后点「计算」重试。");
       return;
     }
     renderResult(res);
@@ -305,6 +305,7 @@ function switchView(view) {
       try { window.BCGraph.setExpression(window.BCCalc.graphLatex(exam.expr), exam.deg, exam.expr); } catch (e) {}
     }
   }
+  if (view === "notes") renderNotesPage();
 }
 
 function graphStatus(msg, kind) {
@@ -378,8 +379,67 @@ function initEvents() {
   });
 }
 
-/* 小讲义里的静态公式：app.js 普通 script 比 defer 的 KaTeX 先执行，
- * 所以等 katex 就绪后再渲染，未就绪就轮询等一会。 */
+/* ---------------- 小讲义：数据驱动的分篇导航 ----------------
+ * 数据见 notes.js（window.BC_NOTES），结构仿 LA-Helper。
+ * 左侧分类目录 + 右侧正文，hash = #notes/<id> 可分享、可前进后退。 */
+const NOTES = window.BC_NOTES;
+let currentNote = null;
+
+function noteIdFromHash() {
+  const m = /^#notes\/([\w-]+)$/.exec(location.hash || "");
+  return m ? m[1] : null;
+}
+
+function renderNotesNav(activeId) {
+  const nav = $("notesNav");
+  if (!nav || !NOTES) return;
+  nav.innerHTML = NOTES.byCat().map((cat) => {
+    const items = cat.items.map((a) =>
+      `<button type="button" class="note-nav${a.id === activeId ? " active" : ""}" data-note="${a.id}">` +
+      `${escapeHtml(a.title)}<small>${escapeHtml(a.tag)}</small></button>`
+    ).join("");
+    return `<div class="note-cat"><div class="note-cat-label">${escapeHtml(cat.label)}</div>${items}</div>`;
+  }).join("");
+  nav.querySelectorAll(".note-nav").forEach((btn) => {
+    btn.addEventListener("click", () => openNote(btn.dataset.note));
+  });
+}
+
+function renderNoteArticle(id) {
+  const box = $("notesArticle");
+  if (!box || !NOTES) return;
+  const a = NOTES.find(id);
+  if (!a) {
+    box.innerHTML = "<h2>小讲义</h2><p class='note-lead'>从左侧选一篇开始读。</p>";
+    return;
+  }
+  box.innerHTML =
+    `<h2>${escapeHtml(a.title)}</h2>` +
+    `<span class="note-tag">${escapeHtml(a.tag)}</span>` +
+    `<p class="note-lead">${a.lead}</p>` +
+    NOTES.blocksHtml(a.blocks);
+  renderNotesMath();
+}
+
+function openNote(id, updateHash) {
+  if (!NOTES || !NOTES.find(id)) return;
+  currentNote = id;
+  renderNotesNav(id);
+  renderNoteArticle(id);
+  if (updateHash !== false && noteIdFromHash() !== id) {
+    history.pushState(null, "", "#notes/" + id);
+  }
+}
+
+function renderNotesPage() {
+  if (!NOTES) return;
+  const fromHash = noteIdFromHash();
+  const id = fromHash && NOTES.find(fromHash) ? fromHash : (currentNote || NOTES.articles[0].id);
+  openNote(id, false);
+}
+
+/* 讲义里的静态公式：app.js 普通 script 比 defer 的 KaTeX 先执行，
+ * 切篇后新插入的公式也要重新渲染，所以用 data-rendered 标记。 */
 function renderNotesMath() {
   const nodes = document.querySelectorAll("#viewNotes .tex, #viewNotes .tex-display");
   if (!nodes.length) return true;
@@ -397,11 +457,23 @@ function renderNotesMath() {
   return true;
 }
 
+// 讲义默认选中第一篇，供切到 Notes 视图时展示。
+if (NOTES && NOTES.articles.length) currentNote = NOTES.articles[0].id;
+
 syncControls();
 initEvents();
 initExamEvents();
 updateExamScreen();
-if (exam.view === "exam") switchView("exam");
+// 带 #notes/<id> 直接打开，或上次停在讲义页时，恢复讲义视图。
+if (noteIdFromHash() || exam.view === "notes") switchView("notes");
+else if (exam.view === "exam") switchView("exam");
+
+// 浏览器前进/后退时，若停留在讲义视图则跟着 hash 切篇。
+window.addEventListener("popstate", () => {
+  if ($("viewNotes").hidden) return;
+  const id = noteIdFromHash();
+  if (id && NOTES && NOTES.find(id)) { currentNote = id; renderNotesPage(); }
+});
 
 let notesMathTries = 0;
 const notesMathTimer = setInterval(() => {

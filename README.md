@@ -18,12 +18,12 @@
   - `DRG` 切**角度/弧度 (DEG/RAD)**，`d/c` 切**分数/小数**，两者都与 Desmos 的 DEG 模式同步
   - `Ans` 记忆上一次结果；支持隐式乘法（`2x`、`3sin(x)`）
   - Desmos 连不上时（大陆网络常见）自动降级到内置 canvas 绘图，离线也有图看
-- **小讲义 (Notes)**：讲义内容的占位页，目前只有一段介绍，后续往这里放求导 / 积分的 short notes
+- **小讲义 (Notes)**：仿 LA Helper 的分篇目录，当前 15 篇（求导 2 篇 + 积分 13 篇），覆盖换元、分部、三角积分、部分分式、函数上下限积分、面积体积、广义积分、参数/极坐标、微分方程、平均值等 BC 主要考点；每篇带逐步解析与常见坑，点目录即可切换（`#notes/<id>` 可分享）
 
 ## 设计原则
 
 - **看过程，不只看答案**：每一步都带法则标签和公式，像 LA Helper 的矩阵步骤一样可对照课本
-- **本地计算**：表达式不上传，SymPy 跑在浏览器里（Pyodide/WASM）；考场模式的数值引擎是纯 JS，零网络
+- **本地计算**：表达式不上传，SymPy 跑在浏览器里（Pyodide/WASM）；引擎放在 Web Worker 里编译，首次加载的十几秒不会卡住页面，讲义和考场模式照常可用；考场模式的数值引擎是纯 JS，零网络
 - **中文优先**：步骤说明全中文，关键概念附英文，方便从英文教材切换过来
 - **装一次，离线可用**：Service Worker 会把页面、KaTeX 和整个 Python 引擎（约 19 MB）写进浏览器缓存。第一次打开后，同一个浏览器再打开是秒开，断网也能求导积分；状态栏会显示「✓ 引擎已装到浏览器 · N 个文件在本地」。
 - **考场手感**：991 深色机身 + 液晶屏 + 独立 d/dx / ∫ 键，Desmos 画函数图像
@@ -34,6 +34,8 @@
 pip install -r requirements-dev.txt
 pytest
 node tools/test_calc_engine.js        # 考场模式数值引擎测试
+python tools/fetch_katex.py           # 讲义公式自检需要本地 KaTeX
+node tools/test_notes.js              # 讲义篇目 + 230 条公式自检
 
 # 本地开发服务器（走 Python 核心，不走 Pyodide）
 python web/app.py
@@ -52,8 +54,9 @@ GitHub Pages 由 `.github/workflows/pages.yml` 在每次 push 到 `main` 时自�
 
 ```
 core/    共享 SymPy 引擎：解析、求导步骤、积分步骤、分发入口
-web/     单页工作台：分步计算 + 考场模式（991 键盘 / Desmos）
-tools/   静态预览构建、Pyodide 自托管下载、数值引擎测试
+web/     单页工作台：分步计算 + 考场模式（991 键盘 / Desmos）+ 分篇讲义
+         engine-worker.js 把 Pyodide/SymPy 放进后台线程，notes.js 存讲义数据
+tools/   静态预览构建、Pyodide 自托管下载、数值引擎与讲义自检
 tests/   核心引擎单元测试
 ```
 
