@@ -9,7 +9,7 @@
 
 **在线预览：<https://franky100-pig.github.io/BC-Helper/>**
 
-## 两种视图
+## 三种视图
 
 - **分步计算 (Step-by-step)**：输入函数，看带法则标签的逐步推导，适合平时学习
 - **考场模式 (Exam)**：左手一个 991 风格计算器，右手一张 Desmos 图
@@ -18,6 +18,7 @@
   - `DRG` 切**角度/弧度 (DEG/RAD)**，`d/c` 切**分数/小数**，两者都与 Desmos 的 DEG 模式同步
   - `Ans` 记忆上一次结果；支持隐式乘法（`2x`、`3sin(x)`）
   - Desmos 连不上时（大陆网络常见）自动降级到内置 canvas 绘图，离线也有图看
+- **小讲义 (Notes)**：讲义内容的占位页，目前只有一段介绍，后续往这里放求导 / 积分的 short notes
 
 ## 设计原则
 
@@ -58,6 +59,6 @@ tests/   核心引擎单元测试
 
 ## 关于 Desmos 的 API key
 
-考场模式用的是 Desmos 官方 demo key，绘图区可能显示一条 "Desmos Trial Key" 提示（不影响功能）。要去掉它，去 [Desmos API](https://www.desmos.com/api/v1.10/docs/index.html#document-api-keys) 申请自己的 key，然后把 `web/desmos.js` 里 `DESMOS_SCRIPT` 的 `apiKey=` 换掉即可。Desmos 是第三方 CDN、跨域，无法被离线缓存；断网时会自动切到内置 canvas 绘图。
+考场模式用的是自己的 Desmos API key（`web/desmos.js` 里的 `DESMOS_API_KEY`）。目前仍有 "Desmos Trial Key · Choose a plan for production use" 横幅——这是 Desmos 对非付费 key 的统一提示，功能不受影响。要彻底去掉，需要在 [Desmos API Keys](https://www.desmos.com/api/v1.10/docs/index.html#document-api-keys) 申请 production key 再替换该常量。Desmos 是第三方 CDN、跨域，无法被离线缓存；断网时会自动切到内置 canvas 绘图。
 
 MIT License.
