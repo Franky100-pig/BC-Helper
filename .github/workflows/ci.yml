@@ -29,6 +29,7 @@ jobs:
       - run: node tools/test_calc_engine.js
       - name: Fetch KaTeX
         run: python tools/fetch_katex.py
+      - run: node tools/test_notes.js
       - name: Build static preview
         run: python tools/build_preview.py
       - name: Local API smoke test
