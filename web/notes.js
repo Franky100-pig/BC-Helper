@@ -19,15 +19,258 @@
  * 新增一篇只需往 articles 里加一项，目录页会自动出现。
  */
 window.BC_NOTES = (function () {
+  /* 按 College Board AP Calculus BC CED（2026–27 澄清版，章节内容未变）的
+   * 10 个官方 Unit 组织。weight 为官方选择题占比；topics 是官方主题顺序，
+   * 单元的「总览」文章据此显示哪些主题已覆盖、哪些还待补。 */
   var categories = [
-    { id: "derivative", label: "导数 · Derivatives" },
-    { id: "integral", label: "积分 · Integrals" },
+    { id: "u1", weight: "5–10%", label: "Unit 1 · 极限与连续 (Limits and Continuity) · 5–10%", topics: [
+      { n: "1.1", t: "瞬时的变化：变化率导论 (Can Change Occur at an Instant?)" },
+      { n: "1.2", t: "极限的定义与记号 (Defining Limits and Limit Notation)" },
+      { n: "1.3", t: "从图像估计极限 (Estimating Limits from Graphs)" },
+      { n: "1.4", t: "从表格估计极限 (Estimating Limits from Tables)" },
+      { n: "1.5", t: "用极限的代数性质求极限 (Algebraic Properties)" },
+      { n: "1.6", t: "用代数变形求极限 (Algebraic Manipulation)" },
+      { n: "1.7", t: "选择求极限的方法 (Selecting Procedures)" },
+      { n: "1.8", t: "夹逼定理 (Squeeze Theorem)" },
+      { n: "1.9", t: "极限的多种表示法 (Multiple Representations)" },
+      { n: "1.10", t: "间断点的类型 (Types of Discontinuities)" },
+      { n: "1.11", t: "一点连续的定义 (Continuity at a Point)" },
+      { n: "1.12", t: "区间上连续 (Continuity over an Interval)" },
+      { n: "1.13", t: "可去间断点 (Removing Discontinuities)" },
+      { n: "1.14", t: "无穷极限与竖直渐近线 (Infinite Limits)" },
+      { n: "1.15", t: "无穷远极限与水平渐近线 (Limits at Infinity)" },
+      { n: "1.16", t: "介值定理 IVT (Intermediate Value Theorem)" },
+    ] },
+    { id: "u2", weight: "5–10%", label: "Unit 2 · 导数的定义与基本性质 (Definition and Fundamental Properties) · 5–10%", topics: [
+      { n: "2.1", t: "一点的平均与瞬时变化率 (Average and Instantaneous Rates)" },
+      { n: "2.2", t: "导数的定义与记号 (Defining the Derivative)" },
+      { n: "2.3", t: "从数值估计导数 (Estimating Derivatives)" },
+      { n: "2.4", t: "可导与连续的关系 (Differentiability and Continuity)" },
+      { n: "2.5", t: "幂法则 (Power Rule)" },
+      { n: "2.6", t: "常数、和差、常数倍法则 (Basic Derivative Rules)" },
+      { n: "2.7", t: "cos x、sin x、e^x、ln x 的导数" },
+      { n: "2.8", t: "乘积法则 (Product Rule)" },
+      { n: "2.9", t: "商法则 (Quotient Rule)" },
+      { n: "2.10", t: "正切/余切/正割/余割的导数" },
+    ] },
+    { id: "u3", weight: "5–10%", label: "Unit 3 · 复合、隐函数与反函数求导 (Composite, Implicit, and Inverse) · 5–10%", topics: [
+      { n: "3.1", t: "链式法则 (The Chain Rule)" },
+      { n: "3.2", t: "隐函数求导 (Implicit Differentiation)" },
+      { n: "3.3", t: "反函数求导 (Differentiating Inverse Functions)" },
+      { n: "3.4", t: "反三角函数求导 (Inverse Trigonometric Functions)" },
+      { n: "3.5", t: "选择求导方法 (Selecting Procedures)" },
+      { n: "3.6", t: "高阶导数 (Higher-Order Derivatives)" },
+    ] },
+    { id: "u4", weight: "5–10%", label: "Unit 4 · 导数的情境应用 (Contextual Applications) · 5–10%", topics: [
+      { n: "4.1", t: "导数在情境中的含义 (Derivative in Context)" },
+      { n: "4.2", t: "直线运动：位置、速度、加速度 (Straight-Line Motion)" },
+      { n: "4.3", t: "非运动情境中的变化率 (Rates in Applied Contexts)" },
+      { n: "4.4", t: "相关变化率入门 (Introduction to Related Rates)" },
+      { n: "4.5", t: "求解相关变化率 (Solving Related Rates)" },
+      { n: "4.6", t: "局部线性与线性近似 (Linearization)" },
+      { n: "4.7", t: "洛必达法则求未定式 (L’Hospital’s Rule)" },
+    ] },
+    { id: "u5", weight: "10–15%", label: "Unit 5 · 导数的分析应用 (Analytical Applications) · 10–15%", topics: [
+      { n: "5.1", t: "中值定理 (Mean Value Theorem)" },
+      { n: "5.2", t: "极值定理、全局/局部极值与临界点 (EVT & Critical Points)" },
+      { n: "5.3", t: "函数的增减区间 (Increasing / Decreasing)" },
+      { n: "5.4", t: "一阶导数判定法 (First Derivative Test)" },
+      { n: "5.5", t: "候选点法求全局极值 (Candidates Test)" },
+      { n: "5.6", t: "凹凸性 (Concavity)" },
+      { n: "5.7", t: "二阶导数判定法 (Second Derivative Test)" },
+      { n: "5.8", t: "函数及其导数的图像 (Sketching Graphs)" },
+      { n: "5.9", t: "函数、一阶导、二阶导的联系 (Connecting f, f', f'')" },
+      { n: "5.10", t: "最优化问题入门 (Introduction to Optimization)" },
+      { n: "5.11", t: "求解最优化问题 (Solving Optimization)" },
+      { n: "5.12", t: "隐函数关系的行为 (Implicit Relations)" },
+    ] },
+    { id: "u6", weight: "15–20%", label: "Unit 6 · 积分与累积的变化 (Integration and Accumulation) · 15–20%", topics: [
+      { n: "6.1", t: "探索累积变化 (Accumulations of Change)" },
+      { n: "6.2", t: "用黎曼和近似面积 (Riemann Sums)" },
+      { n: "6.3", t: "黎曼和、求和记号与定积分记号 (Definite Integral Notation)" },
+      { n: "6.4", t: "微积分基本定理与累积函数 (FTC and Accumulation)" },
+      { n: "6.5", t: "含面积的累积函数行为 (Behavior of Accumulation Functions)" },
+      { n: "6.6", t: "定积分的性质 (Properties of Definite Integrals)" },
+      { n: "6.7", t: "微积分基本定理与定积分 (FTC and Definite Integrals)" },
+      { n: "6.8", t: "原函数与不定积分：基本规则 (Antiderivatives)" },
+      { n: "6.9", t: "换元积分 (Integration by Substitution)" },
+      { n: "6.10", t: "长除法与配方法积分 (Long Division / Completing Square)" },
+      { n: "6.11", t: "分部积分 (Integration by Parts) · BC only" },
+      { n: "6.12", t: "线性部分分式 (Linear Partial Fractions) · BC only" },
+      { n: "6.13", t: "广义积分 (Improper Integrals) · BC only" },
+      { n: "6.14", t: "选择反求导方法 (Selecting Antidifferentiation Techniques)" },
+    ] },
+    { id: "u7", weight: "5–10%", label: "Unit 7 · 微分方程 (Differential Equations) · 5–10%", topics: [
+      { n: "7.1", t: "用微分方程建模 (Modeling with Differential Equations)" },
+      { n: "7.2", t: "验证微分方程的解 (Verifying Solutions)" },
+      { n: "7.3", t: "画斜率场 (Sketching Slope Fields)" },
+      { n: "7.4", t: "用斜率场推理 (Reasoning with Slope Fields)" },
+      { n: "7.5", t: "欧拉方法近似解 (Euler’s Method) · BC only" },
+      { n: "7.6", t: "分离变量求通解 (Separation of Variables)" },
+      { n: "7.7", t: "初值条件与特解 (Initial Conditions)" },
+      { n: "7.8", t: "指数模型 (Exponential Models)" },
+      { n: "7.9", t: "逻辑斯蒂模型 (Logistic Models) · BC only" },
+    ] },
+    { id: "u8", weight: "5–10%", label: "Unit 8 · 积分的应用 (Applications of Integration) · 5–10%", topics: [
+      { n: "8.1", t: "区间上函数的平均值 (Average Value)" },
+      { n: "8.2", t: "用积分联系位置、速度、加速度 (Motion with Integrals)" },
+      { n: "8.3", t: "累积函数与定积分的情境应用 (Applied Accumulation)" },
+      { n: "8.4", t: "x 为自变量的曲线间面积 (Area Between Curves in x)" },
+      { n: "8.5", t: "y 为自变量的曲线间面积 (Area Between Curves in y)" },
+      { n: "8.6", t: "交点超过两个的曲线面积 (More Than Two Intersections)" },
+      { n: "8.7", t: "正方形/长方形截面体积 (Cross Sections: Squares/Rectangles)" },
+      { n: "8.8", t: "三角形/半圆截面体积 (Cross Sections: Triangles/Semicircles)" },
+      { n: "8.9", t: "圆盘法：绕 x 或 y 轴 (Disc Method)" },
+      { n: "8.10", t: "圆盘法：绕其他轴 (Disc Method, Other Axes)" },
+      { n: "8.11", t: "圆环法：绕 x 或 y 轴 (Washer Method)" },
+      { n: "8.12", t: "圆环法：绕其他轴 (Washer Method, Other Axes)" },
+      { n: "8.13", t: "弧长与路程 (Arc Length) · BC only" },
+    ] },
+    { id: "u9", weight: "10–15%", label: "Unit 9 · 参数方程、极坐标与向量函数 (BC only) · 10–15%", topics: [
+      { n: "9.1", t: "参数方程的定义与求导 (Parametric Equations)" },
+      { n: "9.2", t: "参数方程的二阶导 (Second Derivatives)" },
+      { n: "9.3", t: "参数曲线的弧长 (Parametric Arc Length)" },
+      { n: "9.4", t: "向量值函数的定义与求导 (Vector-Valued Functions)" },
+      { n: "9.5", t: "向量值函数的积分 (Integrating Vector-Valued Functions)" },
+      { n: "9.6", t: "参数/向量函数解决运动问题 (Motion Problems)" },
+      { n: "9.7", t: "极坐标与极坐标求导 (Polar Coordinates)" },
+      { n: "9.8", t: "单条极坐标曲线的面积 (Area of a Polar Region)" },
+      { n: "9.9", t: "两条极坐标曲线之间的面积 (Area Between Polar Curves)" },
+    ] },
+    { id: "u10", weight: "15–20%", label: "Unit 10 · 无穷序列与级数 (BC only) · 15–20%", topics: [
+      { n: "10.1", t: "收敛与发散级数的定义 (Convergent / Divergent Series)" },
+      { n: "10.2", t: "几何级数 (Geometric Series)" },
+      { n: "10.3", t: "第 n 项发散检验 (nth Term Test)" },
+      { n: "10.4", t: "积分判别法 (Integral Test)" },
+      { n: "10.5", t: "调和级数与 p 级数 (Harmonic / p-Series)" },
+      { n: "10.6", t: "比较判别法 (Comparison Tests)" },
+      { n: "10.7", t: "交错级数判别法 (Alternating Series Test)" },
+      { n: "10.8", t: "比值判别法 (Ratio Test)" },
+      { n: "10.9", t: "绝对收敛与条件收敛 (Absolute / Conditional)" },
+      { n: "10.10", t: "交错级数误差界 (Alternating Series Error Bound)" },
+      { n: "10.11", t: "泰勒多项式近似 (Taylor Polynomials)" },
+      { n: "10.12", t: "拉格朗日误差界 (Lagrange Error Bound)" },
+      { n: "10.13", t: "幂级数的收敛半径与区间 (Radius / Interval)" },
+      { n: "10.14", t: "泰勒/麦克劳林级数 (Taylor / Maclaurin Series)" },
+      { n: "10.15", t: "用幂级数表示函数 (Representing Functions)" },
+    ] },
   ];
 
   var articles = [
     {
+      id: "u1-overview",
+      cat: "u1",
+      topics: [],
+      tag: "总览",
+      title: "Unit 1 总览 · 官方主题与进度",
+      lead: "按 College Board AP Calculus BC CED（2026–27）的官方主题顺序排列。已覆盖的可点标题跳转，标注「待补」的就是后续要按序补的内容。",
+      blocks: [
+        { roadmap: "u1" },
+      ],
+    },
+    {
+      id: "u2-overview",
+      cat: "u2",
+      topics: [],
+      tag: "总览",
+      title: "Unit 2 总览 · 官方主题与进度",
+      lead: "按 College Board AP Calculus BC CED（2026–27）的官方主题顺序排列。已覆盖的可点标题跳转，标注「待补」的就是后续要按序补的内容。",
+      blocks: [
+        { roadmap: "u2" },
+      ],
+    },
+    {
+      id: "u3-overview",
+      cat: "u3",
+      topics: [],
+      tag: "总览",
+      title: "Unit 3 总览 · 官方主题与进度",
+      lead: "按 College Board AP Calculus BC CED（2026–27）的官方主题顺序排列。已覆盖的可点标题跳转，标注「待补」的就是后续要按序补的内容。",
+      blocks: [
+        { roadmap: "u3" },
+      ],
+    },
+    {
+      id: "u4-overview",
+      cat: "u4",
+      topics: [],
+      tag: "总览",
+      title: "Unit 4 总览 · 官方主题与进度",
+      lead: "按 College Board AP Calculus BC CED（2026–27）的官方主题顺序排列。已覆盖的可点标题跳转，标注「待补」的就是后续要按序补的内容。",
+      blocks: [
+        { roadmap: "u4" },
+      ],
+    },
+    {
+      id: "u5-overview",
+      cat: "u5",
+      topics: [],
+      tag: "总览",
+      title: "Unit 5 总览 · 官方主题与进度",
+      lead: "按 College Board AP Calculus BC CED（2026–27）的官方主题顺序排列。已覆盖的可点标题跳转，标注「待补」的就是后续要按序补的内容。",
+      blocks: [
+        { roadmap: "u5" },
+      ],
+    },
+    {
+      id: "u6-overview",
+      cat: "u6",
+      topics: [],
+      tag: "总览",
+      title: "Unit 6 总览 · 官方主题与进度",
+      lead: "按 College Board AP Calculus BC CED（2026–27）的官方主题顺序排列。已覆盖的可点标题跳转，标注「待补」的就是后续要按序补的内容。",
+      blocks: [
+        { roadmap: "u6" },
+      ],
+    },
+    {
+      id: "u7-overview",
+      cat: "u7",
+      topics: [],
+      tag: "总览",
+      title: "Unit 7 总览 · 官方主题与进度",
+      lead: "按 College Board AP Calculus BC CED（2026–27）的官方主题顺序排列。已覆盖的可点标题跳转，标注「待补」的就是后续要按序补的内容。",
+      blocks: [
+        { roadmap: "u7" },
+      ],
+    },
+    {
+      id: "u8-overview",
+      cat: "u8",
+      topics: [],
+      tag: "总览",
+      title: "Unit 8 总览 · 官方主题与进度",
+      lead: "按 College Board AP Calculus BC CED（2026–27）的官方主题顺序排列。已覆盖的可点标题跳转，标注「待补」的就是后续要按序补的内容。",
+      blocks: [
+        { roadmap: "u8" },
+      ],
+    },
+    {
+      id: "u9-overview",
+      cat: "u9",
+      topics: [],
+      tag: "总览",
+      title: "Unit 9 总览 · 官方主题与进度",
+      lead: "按 College Board AP Calculus BC CED（2026–27）的官方主题顺序排列。已覆盖的可点标题跳转，标注「待补」的就是后续要按序补的内容。",
+      blocks: [
+        { roadmap: "u9" },
+      ],
+    },
+    {
+      id: "u10-overview",
+      cat: "u10",
+      topics: [],
+      tag: "总览",
+      title: "Unit 10 总览 · 官方主题与进度",
+      lead: "按 College Board AP Calculus BC CED（2026–27）的官方主题顺序排列。已覆盖的可点标题跳转，标注「待补」的就是后续要按序补的内容。",
+      blocks: [
+        { roadmap: "u10" },
+      ],
+    },
+    {
       id: "deriv-def",
-      cat: "derivative",
+      cat: "u2",
+      topics: ["2.1", "2.2", "2.4"],
       tag: "定义",
       title: "导数的定义",
       lead: "导数 (derivative) 衡量函数在某一点的瞬时变化率。它不是一个新运算，而是割线斜率在两点无限靠近时的极限。",
@@ -50,7 +293,8 @@ window.BC_NOTES = (function () {
     },
     {
       id: "deriv-rules",
-      cat: "derivative",
+      cat: "u2",
+      topics: ["2.5", "2.6", "2.7", "2.8", "2.9", "2.10"],
       tag: "法则",
       title: "求导法则与常见导数",
       lead: "考试里几乎不必回到极限定义。把基本函数的导数和几条组合法则记住，任何初等函数都能拆开逐层求。分步计算视图会把用到的法则标在每一步上。",
@@ -77,7 +321,8 @@ window.BC_NOTES = (function () {
     },
     {
       id: "chain-layers",
-      cat: "derivative",
+      cat: "u3",
+      topics: ["3.1"],
       tag: "技巧",
       title: "链式法则：多层复合怎么拆",
       lead: "复合函数求导不用猜：先给函数分层，再把每层的导数乘起来。BC 里漏一层，比算错乘法更常见。",
@@ -111,10 +356,11 @@ window.BC_NOTES = (function () {
     },
     {
       id: "implicit-rates",
-      cat: "derivative",
-      tag: "应用",
-      title: "隐函数求导与相关变化率",
-      lead: "当 y 解不出来（或没必要解）时，把 y 当作 x 的函数两边同时求导；相关变化率只是把自变量换成时间 t。",
+      cat: "u3",
+      topics: ["3.2"],
+      tag: "隐函数",
+      title: "隐函数求导 implicit differentiation",
+      lead: "当 y 解不出来（或没必要解）时，不必显式解出 y：把 y 当作 x 的函数，两边同时对 x 求导，遇到 y 就乘上 y'。",
       blocks: [
         { h: "1 · 隐函数求导的四步" },
         { ul: [
@@ -131,12 +377,28 @@ window.BC_NOTES = (function () {
           "② 解出：<span class=\"tex\">y'=-\\dfrac{x}{y}</span>。",
           "③ 代入 <span class=\"tex\">(3,4)</span>：<span class=\"tex\">y'=-\\dfrac{3}{4}</span>。",
         ] },
-        { h: "3 · 相关变化率 (related rates)" },
-        "两个量都随时间 <span class=\"tex\">t</span> 变化时：先写出它们的关系式，再对 <span class=\"tex\">t</span> 求导，最后代入瞬时值。",
-        "例：圆的半径以 <span class=\"tex\">2\\,\\text{cm/s}</span> 增大，求 <span class=\"tex\">r=5</span> 时面积的变化率：",
+        { tip: "隐函数求导属于 CED Unit 3。相关变化率 (related rates) 属于 Unit 4，已单独成篇，方便按官方顺序复习。" },
+      ],
+    },
+    {
+      id: "related-rates",
+      cat: "u4",
+      topics: ["4.1", "4.3", "4.4", "4.5"],
+      tag: "情境应用",
+      title: "相关变化率 related rates",
+      lead: "两个量都随时间 t 变化时：先写出它们的关系式，再对 t 求导，最后代入瞬时值。顺序错了，导数就会变成 0。",
+      blocks: [
+        { h: "1 · 标准流程" },
+        { ul: [
+          "用变量表示随时间变化的量，先写下关系式（如 <span class=\"tex\">A=\\pi r^{2}</span>）",
+          "两边对 <span class=\"tex\">t</span> 求导，链式法则会自动带出变化率（如 <span class=\"tex\">dr/dt</span>）",
+          "代入给定的瞬时值和变化率，写清单位",
+        ] },
+        { h: "2 · 例题：圆的面积变化率" },
+        "圆的半径以 <span class=\"tex\">2\\,\\text{cm/s}</span> 增大，求 <span class=\"tex\">r=5</span> 时面积的变化率：",
         { steps: [
           "① 关系式：<span class=\"tex\">A=\\pi r^{2}</span>。",
-          "② 对 <span class=\"tex\">t</span> 求导（乘上 <span class=\"tex\">dr/dt</span>）：<span class=\"tex\">\\dfrac{dA}{dt}=2\\pi r\\dfrac{dr}{dt}</span>。",
+          "② 对 <span class=\"tex\">t</span> 求导：<span class=\"tex\">\\dfrac{dA}{dt}=2\\pi r\\dfrac{dr}{dt}</span>。",
           "③ 代入 <span class=\"tex\">r=5,\\ dr/dt=2</span>：<span class=\"tex\">\\dfrac{dA}{dt}=20\\pi\\ \\text{cm}^{2}/\\text{s}</span>。",
         ] },
         { tip: "最大的坑是「先代数值再求导」：一旦把 <span class=\"tex\">r=5</span> 提前代进去，<span class=\"tex\">r</span> 就变成常数，导数直接为 0。顺序永远是：先写关系式 → 求导 → 最后代值，别忘了乘上变化率本身。" },
@@ -144,7 +406,8 @@ window.BC_NOTES = (function () {
     },
     {
       id: "log-diff",
-      cat: "derivative",
+      cat: "u3",
+      topics: ["3.5"],
       tag: "技巧",
       title: "对数求导法 logarithmic differentiation",
       lead: "一堆因子乘除、或底数和指数里都有 x（如 x^x），先取对数把乘积变成和、指数拉下来，求导会轻松很多。",
@@ -174,7 +437,8 @@ window.BC_NOTES = (function () {
     },
     {
       id: "inverse-deriv",
-      cat: "derivative",
+      cat: "u3",
+      topics: ["3.3", "3.4"],
       tag: "反函数",
       title: "反函数与反三角函数求导",
       lead: "反函数的导数是原函数导数的倒数；反三角函数的几个分母，正是从这个倒数关系里来的。",
@@ -200,7 +464,8 @@ window.BC_NOTES = (function () {
     },
     {
       id: "param-polar-deriv",
-      cat: "derivative",
+      cat: "u9",
+      topics: ["9.1", "9.2", "9.7"],
       tag: "参数/极坐标",
       title: "参数方程与极坐标求导",
       lead: "参数方程不必先消掉 t；极坐标只要先写成 x=r(θ)cosθ、y=r(θ)sinθ，就回到同一套参数求导。",
@@ -229,7 +494,8 @@ window.BC_NOTES = (function () {
     },
     {
       id: "int-def",
-      cat: "integral",
+      cat: "u6",
+      topics: ["6.3"],
       tag: "定义",
       title: "积分的定义",
       lead: "积分有两种看似无关、实则紧密相连的含义：不定积分是求导的逆操作，定积分是把无穷多细条累加起来的极限。",
@@ -255,7 +521,8 @@ window.BC_NOTES = (function () {
     },
     {
       id: "ftc",
-      cat: "integral",
+      cat: "u6",
+      topics: ["6.4", "6.7"],
       tag: "定理",
       title: "微积分基本定理",
       lead: "微积分基本定理 (Fundamental Theorem of Calculus, FTC) 把导数和积分真正接了起来：求定积分不必真的去算无穷和，找到原函数代值相减即可。这是 BC 的核心主线。",
@@ -275,7 +542,8 @@ window.BC_NOTES = (function () {
     },
     {
       id: "int-formulas",
-      cat: "integral",
+      cat: "u6",
+      topics: ["6.8"],
       tag: "公式",
       title: "常见积分公式",
       lead: "把最常用的反导数记牢，配合换元 (u-substitution) 与分部 (integration by parts) 就能拿下 BC 的大部分积分题。",
@@ -296,7 +564,8 @@ window.BC_NOTES = (function () {
     },
     {
       id: "u-sub",
-      cat: "integral",
+      cat: "u6",
+      topics: ["6.9"],
       tag: "方法",
       title: "换元法 u-substitution",
       lead: "换元就是『反过来用链式法则』。当被积函数里同时出现一个内层函数 g(x) 和它的导数 g'(x)，令 u=g(x) 就能把复合结构拆平。",
@@ -327,7 +596,8 @@ window.BC_NOTES = (function () {
     },
     {
       id: "parts",
-      cat: "integral",
+      cat: "u6",
+      topics: ["6.11"],
       tag: "方法",
       title: "分部积分 integration by parts",
       lead: "分部积分处理『两类不同函数相乘』，本质是乘积求导公式的积分形式。目标是把难积的因子换到 d 的右边，变成容易积的 dv。",
@@ -354,7 +624,8 @@ window.BC_NOTES = (function () {
     },
     {
       id: "trig-int",
-      cat: "integral",
+      cat: "u6",
+      topics: ["6.14"],
       tag: "三角",
       title: "三角函数积分",
       lead: "三角积分不靠硬背一堆公式，靠『先恒等变形，再换元』。核心是奇偶次幂的拆法与几个基本恒等式。",
@@ -385,7 +656,8 @@ window.BC_NOTES = (function () {
     },
     {
       id: "partial-frac",
-      cat: "integral",
+      cat: "u6",
+      topics: ["6.12"],
       tag: "有理式",
       title: "部分分式 partial fractions",
       lead: "有理函数积分的固定套路：先因式分解分母，再拆成若干简单分式，逐项积分。BC 常考一次因式、重复因式和不可约二次因式。",
@@ -410,7 +682,8 @@ window.BC_NOTES = (function () {
     },
     {
       id: "var-bounds",
-      cat: "integral",
+      cat: "u6",
+      topics: ["6.4", "6.5"],
       tag: "变限",
       title: "函数上下限的积分求导",
       lead: "这是 BC 的高频题：不求积分，直接对变上限（甚至上下限都是函数）的定积分求导。像上限是 <span class=\"tex\">(\\sin x)^{2}</span> 这种复合函数，关键是 FTC + 链式法则逐层求导，完全不需要先算出原函数。",
@@ -467,7 +740,8 @@ window.BC_NOTES = (function () {
     },
     {
       id: "bounds-direct",
-      cat: "integral",
+      cat: "u6",
+      topics: ["6.7"],
       tag: "定积分",
       title: "上下限含函数的定积分：直接计算",
       lead: "题目若写成 <span class=\"tex\">\\int_{2}^{\\sin^{2}x}f(t)\\,dt</span>，前面没有 <span class=\"tex\">d/dx</span>，那就是真要算出一个关于 x 的函数。关键不是对上下限求导，而是先求 f 的原函数 F(t)（内层复杂时先换元），再把上、下限代进去相减。",
@@ -519,7 +793,8 @@ window.BC_NOTES = (function () {
     },
     {
       id: "area-volume",
-      cat: "integral",
+      cat: "u8",
+      topics: ["8.4", "8.5", "8.7", "8.9", "8.11"],
       tag: "应用",
       title: "面积与体积的应用",
       lead: "定积分把无限多细条累加起来：面积是『高 × 宽』的累加，体积是『截面积 × 厚』的累加。做应用题第一步永远是画草图。",
@@ -553,7 +828,8 @@ window.BC_NOTES = (function () {
     },
     {
       id: "improper",
-      cat: "integral",
+      cat: "u6",
+      topics: ["6.13"],
       tag: "广义积分",
       title: "广义积分 improper integrals",
       lead: "积分区间无限，或被积函数在区间内有瑕点（趋于无穷），都不能直接套 FTC，必须用极限定义判断是否收敛。",
@@ -577,7 +853,8 @@ window.BC_NOTES = (function () {
     },
     {
       id: "param-polar",
-      cat: "integral",
+      cat: "u9",
+      topics: ["9.3", "9.8"],
       tag: "参数/极坐标",
       title: "参数方程与极坐标中的积分",
       lead: "BC 把积分搬到了参数曲线和极坐标上：本质仍是把曲线切成小段累加，只是面积、弧长的微元换了写法。",
@@ -600,7 +877,8 @@ window.BC_NOTES = (function () {
     },
     {
       id: "diffeq",
-      cat: "integral",
+      cat: "u7",
+      topics: ["7.6", "7.7", "7.9"],
       tag: "微分方程",
       title: "可分离变量与逻辑斯蒂方程",
       lead: "微分方程把导数当作未知函数来解。可分离变量 (separable) 靠两边积分；逻辑斯蒂方程 (logistic) 是 BC 指定的建模重点。",
@@ -626,7 +904,8 @@ window.BC_NOTES = (function () {
     },
     {
       id: "average-accum",
-      cat: "integral",
+      cat: "u8",
+      topics: ["8.1", "8.3"],
       tag: "累积",
       title: "平均值与累积函数",
       lead: "积分不仅算面积，还把『变化率』累积成『总量』。平均值、位移与路程、累积函数都是同一个观点的不同外衣。",
@@ -679,6 +958,40 @@ window.BC_NOTES = (function () {
     return String(s == null ? "" : s); // 文案由本项目维护，直接当 HTML 用
   }
 
+  function categoryById(id) {
+    for (var i = 0; i < categories.length; i++) {
+      if (categories[i].id === id) return categories[i];
+    }
+    return null;
+  }
+
+  function coverageFor(catId, topicNo) {
+    for (var i = 0; i < articles.length; i++) {
+      var a = articles[i];
+      if (a.cat === catId && a.topics && a.topics.indexOf(topicNo) !== -1) return a;
+    }
+    return null;
+  }
+
+  function roadmapHtml(catId) {
+    var cat = categoryById(catId);
+    if (!cat) return "";
+    var done = 0;
+    var items = cat.topics.map(function (tp) {
+      var a = coverageFor(catId, tp.n);
+      if (a) done++;
+      return '<div class="roadmap-item ' + (a ? "done" : "todo") + '">' +
+        '<span class="roadmap-n">' + esc(tp.n) + '</span>' +
+        '<span class="roadmap-txt">' + esc(tp.t) + '</span>' +
+        (a ? '<button type="button" class="roadmap-jump" data-jump="' + esc(a.id) + '">已覆盖 · 阅读 →</button>'
+           : '<span class="roadmap-todo">待补</span>') +
+        '</div>';
+    }).join("");
+    return '<div class="note-roadmap">' +
+      '<div class="roadmap-head">官方主题进度 · ' + done + ' / ' + cat.topics.length + ' 已覆盖</div>' +
+      items + '</div>';
+  }
+
   function blocksHtml(blocks) {
     if (!blocks || !blocks.length) return "";
     return blocks.map(function (b) {
@@ -692,6 +1005,7 @@ window.BC_NOTES = (function () {
         return "<li>" + esc(x) + "</li>";
       }).join("") + "</ol>";
       if (b.tip) return "<div class=\"note-callout\"><b>提示 · Tip</b><br>" + esc(b.tip) + "</div>";
+      if (b.roadmap) return roadmapHtml(b.roadmap);
       return "";
     }).join("");
   }
