@@ -57,6 +57,7 @@ def test_step_shape():
 def test_errors():
     assert not dispatch({"op": "derivative", "expr": ""})["ok"]
     assert not dispatch({"op": "derivative", "expr": "y^2"})["ok"]
+    assert not dispatch({"op": "derivative", "expr": "x", "order": 6})["ok"]
     assert not dispatch({"op": "derivative", "expr": "x", "order": 99})["ok"]
     assert not dispatch({"op": "integral", "expr": "x", "kind": "definite", "lower": "x", "upper": "2"})["ok"]
     assert not dispatch({"op": "limit", "expr": "x"})["ok"]

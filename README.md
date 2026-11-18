@@ -2,7 +2,7 @@
 
 仿照 [LA Helper](https://github.com/Franky100-pig/LA-Helper) 做的微积分 BC 学习计算器。界面中文优先，关键概念保留英文原名（如「链式法则 (chain rule)」），第一步只做两种计算：
 
-- 求导 (derivative)：1–8 阶导数，可选在 `x = a` 处求值
+- 求导 (derivative)：1–5 阶导数（覆盖 BC 考试需要），可选在 `x = a` 处求值
 - 积分 (integral)：不定积分、定积分，方法偏好可选换元 (u-substitution) / 分部 (integration by parts)
 
 另外提供**考场模式 (exam mode)**：卡西欧 fx-991CN 风格键盘 + Desmos 绘图，还原「考场内建 Desmos + 实体计算器」的手感。

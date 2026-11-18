@@ -19,7 +19,7 @@ def _derivative(payload, expr):
         order = int(payload.get("order", 1))
     except (TypeError, ValueError) as exc:
         raise ValueError(ERRORS["bad_order"]) from exc
-    if order < 1 or order > 8:
+    if order < 1 or order > 5:
         raise ValueError(ERRORS["bad_order"])
 
     result, steps = derivative_steps(expr, X, order)

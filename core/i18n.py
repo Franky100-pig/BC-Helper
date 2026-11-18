@@ -42,7 +42,7 @@ ERRORS = {
     "empty": "表达式不能为空 (empty expression)",
     "bad_expr": "看不懂这个表达式，检查一下括号和函数名 (cannot parse expression)",
     "extra_symbol": "只支持变量 x，出现了额外符号 (only x is supported)",
-    "bad_order": "求导阶数必须是 1 到 8 的整数 (order must be 1–8)",
+    "bad_order": "求导阶数必须是 1 到 5 的整数 (order must be 1–5)",
     "bad_limit": "上下限必须是常数，不能含 x (bounds must be constants)",
     "bad_op": "未知计算类型 (unknown operation)",
     "no_integral": "SymPy 暂时算不出这个积分 (SymPy could not evaluate this integral)",
