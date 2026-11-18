@@ -5,7 +5,12 @@
  *  - 其余同源 GET cache-first：第一次下载即缓存，之后秒开、可离线
  *  - 跨域（Desmos CDN）完全不碰，避免 opaque 响应污染缓存
  */
-const CACHE = "bc-static-v2";
+const CACHE = "bc-static-v3";
+
+// build_preview.py 会把带 ?v=hash 的真实资源 URL 注入这里。
+// 关键点：页面缓存的是 build 后的 index.html，它引用的是带版本号脚本；
+// 若只缓存无版本号副本，离线时这些请求会 miss 导致白屏。
+const VERSIONED = /*__BC_VERSIONED__*/[]/*__BC_VERSIONED_END__*/;
 
 const SHELL = [
   "./",
@@ -29,7 +34,7 @@ async function prime(cache, urls) {
 self.addEventListener("install", (event) => {
   event.waitUntil((async () => {
     const cache = await caches.open(CACHE);
-    await prime(cache, SHELL);
+    await prime(cache, SHELL.concat(VERSIONED));
     await self.skipWaiting();
   })());
 });

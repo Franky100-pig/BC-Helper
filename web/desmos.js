@@ -45,6 +45,13 @@ function graphStatus(msg, kind) {
 
 async function initGraph() {
   if (graph.instance || graph.mode === "canvas") return;
+  // 离线快速兜底：navigator.onLine 明确为 false 时直接降级，
+  // 不等 loadScript 的 9 秒超时（离线白等体验很差）。
+  if (navigator.onLine === false) {
+    graph.fromOffline = true;
+    useCanvas("当前离线 · 已切换到内置绘图（联网后自动恢复 Desmos）");
+    return;
+  }
   graphStatus("正在连接 Desmos…");
   const ok = await loadScript(DESMOS_SCRIPT, DESMOS_TIMEOUT);
   if (ok) {
@@ -221,6 +228,15 @@ function resetCanvas() {
   graph.canvasView = { xmin: -10, xmax: 10, ymin: -6, ymax: 6 };
   drawCanvas();
 }
+
+// 网络恢复后自动从 canvas 切回 Desmos（前提是因离线降级、且尚未成功连上）。
+window.addEventListener("online", () => {
+  if (graph.mode === "canvas" && graph.fromOffline && !graph.instance) {
+    graph.fromOffline = false;
+    graph.mode = "loading";
+    initGraph();
+  }
+});
 
 window.BCGraph = {
   init: initGraph,

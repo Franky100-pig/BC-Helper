@@ -44,8 +44,17 @@ def main():
             '<script src="' + name + query + '"></script>',
         )
     (OUT / "index.html").write_text(html, encoding="utf-8")
-    for name in ("app.js", "bridge.js", "sw.js", "calc-engine.js", "desmos.js"):
+    # 把带 ?v=hash 的真实资源 URL 注入 SW：页面缓存的是 build 后的 index.html，
+    # 其中脚本全部带版本号；离线时这些带版本号的请求必须命中缓存，否则白屏。
+    versioned = ["./" + name + query for name in
+                 ("core_bundle.js", "bridge.js", "app.js", "calc-engine.js", "desmos.js")]
+    sw = pages["sw.js"].replace(
+        "/*__BC_VERSIONED__*/[]/*__BC_VERSIONED_END__*/",
+        "/*__BC_VERSIONED__*/" + json.dumps(versioned) + "/*__BC_VERSIONED_END__*/",
+    )
+    for name in ("app.js", "bridge.js", "calc-engine.js", "desmos.js"):
         (OUT / name).write_text(pages[name], encoding="utf-8")
+    (OUT / "sw.js").write_text(sw, encoding="utf-8")
     vendor = web / "vendor"
     if vendor.exists():
         shutil.copytree(vendor, OUT / "vendor", dirs_exist_ok=True)
