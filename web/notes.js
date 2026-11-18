@@ -318,7 +318,7 @@ window.BC_NOTES = (function () {
       cat: "integral",
       tag: "定积分",
       title: "上下限含函数的定积分：直接计算",
-      lead: "题目若写成 <span class=\"tex\">\\int_{2}^{\\sin^{2}x}f(t)\\,dt</span>，前面没有 <span class=\"tex\">d/dx</span>，那就是真要算出一个关于 x 的函数。做法不是换元，而是先求 f 的原函数 F(t)，再把上、下限代进去相减。",
+      lead: "题目若写成 <span class=\"tex\">\\int_{2}^{\\sin^{2}x}f(t)\\,dt</span>，前面没有 <span class=\"tex\">d/dx</span>，那就是真要算出一个关于 x 的函数。关键不是对上下限求导，而是先求 f 的原函数 F(t)（内层复杂时先换元），再把上、下限代进去相减。",
       blocks: [
         { h: "1 · 先分清：求值 vs 求导" },
         { ul: [
@@ -341,13 +341,28 @@ window.BC_NOTES = (function () {
           "代入得 <span class=\"tex\">F(\\sin x)-F(\\cos x)=\\sin^{2}x-\\cos^{2}x</span>。",
           "用倍角公式化简：<span class=\"tex\">\\sin^{2}x-\\cos^{2}x=-\\cos(2x)</span>。",
         ] },
-        { h: "4 · 几个容易踩的坑" },
+        { h: "4 · 内层也是函数：先换元求出 F(t)" },
+        "如果积分号里还套了一层函数，比如 <span class=\"tex\">\\cos(t^{2})</span>，做法仍然一样：先把被积函数当成 <b>t</b> 的函数，用换元找到 <span class=\"tex\">F(t)</span>，最后才把函数上下限代进去。",
+        { steps: [
+          "求 <span class=\"tex\">\\int_{0}^{\\sin x}2t\\cos(t^{2})\\,dt</span>。先不管上限，内层是 <span class=\"tex\">t^{2}</span>，令 <span class=\"tex\">u=t^{2}</span>，<span class=\"tex\">du=2t\\,dt</span>。",
+          "原函数是 <span class=\"tex\">F(t)=\\sin(t^{2})</span>，因为 <span class=\"tex\">F'(t)=2t\\cos(t^{2})</span>。",
+          "现在才代上下限：<span class=\"tex\">F(\\sin x)-F(0)=\\sin\\big((\\sin x)^{2}\\big)-\\sin0=\\sin(\\sin^{2}x)</span>。",
+          "若上下限也都是函数，如 <span class=\"tex\">\\int_{\\cos x}^{\\sin x}2t\\cos(t^{2})\\,dt</span>，答案就是 <span class=\"tex\">\\sin(\\sin^{2}x)-\\sin(\\cos^{2}x)</span>。",
+        ] },
+        { h: "5 · 内层同时含 x 和 t" },
+        "若被积函数是 <span class=\"tex\">f(x,t)</span>，积分时把 <b>x 当常数</b>，只对 <b>t</b> 积分，结果自然还是 x 的函数：",
+        { tex: "\\int_{0}^{\\sin x}\\cos(xt)\\,dt=\\left[\\frac{\\sin(xt)}{x}\\right]_{0}^{\\sin x}=\\frac{\\sin(x\\sin x)}{x}\\quad(x\\neq0)" },
+        { ul: [
+          "这时 x 不再只是上限参数，它同时出现在被积函数里；但『先对 t 积分、再代上下限』的顺序不变",
+          "若连原函数都找不到，直接求值的题通常不会这么出；若前面再加 <span class=\"tex\">d/dx</span>，就要用更一般的 Leibniz 公式（BC 一般不要求）",
+        ] },
+        { h: "6 · 几个容易踩的坑" },
         { ul: [
           "<b>上限小于下限也正常</b>：<span class=\"tex\">\\sin^{2}x\\le1&lt;2</span>，所以第一题结果是负数；定积分是有向面积，别自作主张交换上下限",
           "<span class=\"tex\">(\\sin x)^{2}</span> 是 <span class=\"tex\">\\sin^{2}x</span>，不是 <span class=\"tex\">\\sin(x^{2})</span>；平方后是 <span class=\"tex\">\\sin^{4}x</span>，别写成 <span class=\"tex\">\\sin^{2}(x^{2})</span>",
           "若 <span class=\"tex\">f(t)</span> 没有初等原函数（如 <span class=\"tex\">\\sqrt{t^{3}+1}</span>），直接积分写不出闭式；考试遇到这种被积函数，通常前面会带 <span class=\"tex\">d/dx</span>，让你用 FTC 绕过积分",
         ] },
-        { tip: "判断口诀：<b>有 d/dx 不积分，没 d/dx 才积分</b>。前者只代上限再乘导数；后者先找原函数，再把上下限代进去相减。" },
+        { tip: "判断口诀：<b>有 d/dx 不积分，没 d/dx 才积分</b>。前者只代上限再乘导数；后者先找原函数（内层复杂就先换元），再把上下限代进去相减。内层也含 x 时，把 x 当常数照积，最后结果仍是 x 的函数。" },
       ],
     },
     {
