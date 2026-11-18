@@ -452,6 +452,10 @@ function renderNoteArticle(id) {
     `<span class="note-tag">${escapeHtml(a.tag)}</span>` +
     `<p class="note-lead">${a.lead}</p>` +
     NOTES.blocksHtml(a.blocks);
+  // Unit 总览里的「已覆盖 · 阅读」按钮跳到对应讲义
+  box.querySelectorAll("[data-jump]").forEach((btn) => {
+    btn.addEventListener("click", () => openNote(btn.dataset.jump));
+  });
   renderNotesMath();
 }
 
