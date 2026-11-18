@@ -62,6 +62,66 @@ function math(value) {
   return escapeHtml(value.text || tex);
 }
 
+/* 输入区仍保留 991 风格的纯文本写法（好键入），下面实时给出标准数学排版：
+ * 求导显示 d/dx 与阶数，积分显示 ∫ 与上下限，次方/根号都由 KaTeX 排版。 */
+function latexOf(raw) {
+  const text = String(raw == null ? "" : raw).trim();
+  if (!text || !window.BCCalc || typeof window.BCCalc.graphLatex !== "function") return null;
+  try { return window.BCCalc.graphLatex(text); } catch (e) { return null; }
+}
+
+function plainTex(raw) {
+  return String(raw == null ? "" : raw)
+    .replace(/\\/g, "\\backslash ")
+    .replace(/\{/g, "\\{")
+    .replace(/\}/g, "\\}")
+    .replace(/\$/g, "\\$");
+}
+
+// 只有顶层出现加减时才给整个表达式加括号，√ 和分式内部不加，贴近手写习惯。
+function needsParens(latex) {
+  let depth = 0;
+  for (const ch of latex) {
+    if (ch === "{" || ch === "(" || ch === "[") depth++;
+    else if (ch === "}" || ch === ")" || ch === "]") depth--;
+    else if (depth === 0 && (ch === "+" || ch === "-")) return true;
+  }
+  return false;
+}
+
+function renderExprPreview() {
+  const box = $("exprPreview");
+  if (!box || !window.katex) return false;
+  const raw = $("expr").value.trim();
+  if (!raw) {
+    box.innerHTML = '<span class="expr-preview-empty">输入表达式后显示标准数学排版</span>';
+    return true;
+  }
+  const f = latexOf(raw);
+  if (!f) { box.textContent = raw; return true; }
+  const body = needsParens(f) ? "\\left(" + f + "\\right)" : f;
+  let display;
+  if (state.mode === "derivative") {
+    const order = Math.max(1, Math.min(5, Number($("order").value) || 1));
+    const d = order === 1 ? "\\frac{d}{dx}" : "\\frac{d^{" + order + "}}{dx^{" + order + "}}";
+    display = d + body;
+    const at = $("at").value.trim();
+    if (at) display += "\\big|_{x=" + (latexOf(at) || plainTex(at)) + "}";
+  } else if (state.kind === "definite") {
+    const a = latexOf($("lower").value) || plainTex($("lower").value);
+    const b = latexOf($("upper").value) || plainTex($("upper").value);
+    display = "\\int_{" + a + "}^{" + b + "}" + body + "\\,dx";
+  } else {
+    display = "\\int" + body + "\\,dx";
+  }
+  try {
+    box.innerHTML = window.katex.renderToString(display, { throwOnError: false, displayMode: true });
+  } catch (e) {
+    box.textContent = raw;
+  }
+  return true;
+}
+
 function renderExamples() {
   const box = $("examples");
   box.innerHTML = "";
@@ -104,6 +164,7 @@ function syncControls() {
     tab.classList.toggle("active", tab.dataset.mode === state.mode);
   });
   renderExamples();
+  renderExprPreview();
 }
 
 function setMode(mode) {
@@ -197,6 +258,7 @@ function collectState() {
   state.upper = $("upper").value;
   state.showSteps = $("showSteps").checked;
   saveState();
+  renderExprPreview();
 }
 
 const THEME_STORE = "bc-theme";
@@ -518,6 +580,12 @@ window.addEventListener("popstate", () => {
   const id = noteIdFromHash();
   if (id && NOTES && NOTES.find(id)) { currentNote = id; renderNotesPage(); }
 });
+
+// KaTeX 是 defer 加载，app.js 先执行；等它就绪后补上输入预览。
+let exprPreviewTries = 0;
+const exprPreviewTimer = setInterval(() => {
+  if (renderExprPreview() || ++exprPreviewTries > 40) clearInterval(exprPreviewTimer);
+}, 150);
 
 let notesMathTries = 0;
 const notesMathTimer = setInterval(() => {

@@ -99,6 +99,16 @@ main { flex:1; width:100%; max-width:1120px; margin:0 auto; padding:20px 24px 36
   padding:10px 14px; border-radius:0 8px 8px 0; font-size:13px; color:var(--muted); margin:14px 0; line-height:1.8;
 }
 .note-callout b { color:var(--accent2); }
+.expr-preview-label { font-size:11px; color:var(--muted); margin-top:10px; }
+.expr-preview {
+  min-height:46px; margin-top:5px; padding:8px 10px; background:var(--inset);
+  border:1px solid var(--border); border-radius:8px; font-size:15px;
+  display:flex; align-items:center; justify-content:center; overflow-x:auto;
+  scrollbar-width:none;
+}
+.expr-preview::-webkit-scrollbar { display:none; }
+.expr-preview .katex-display { margin:0; }
+.expr-preview-empty { font-size:12px; color:var(--muted); }
 .note-roadmap { background:var(--inset); border:1px solid var(--border); border-radius:10px; padding:10px 14px; margin:14px 0; }
 .roadmap-head { font-size:12px; color:var(--muted); margin-bottom:6px; font-weight:600; }
 .roadmap-item { display:flex; align-items:baseline; gap:10px; padding:7px 0; border-top:1px solid var(--border); font-size:13px; line-height:1.6; }
@@ -254,6 +264,8 @@ footer { border-top:1px solid var(--border); padding:14px 24px; font-size:12px; 
       <label>f(x) =
         <input id="expr" type="text" value="x^2*sin(x)+e^(2x)" spellcheck="false" autocomplete="off">
       </label>
+      <div class="expr-preview-label">标准排版预览 · Preview</div>
+      <div id="exprPreview" class="expr-preview" aria-live="polite"></div>
 
       <div id="derivativeControls">
         <div class="row">
