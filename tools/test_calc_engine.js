@@ -31,6 +31,7 @@ close(calc.evaluate("3pi").value, 3 * Math.PI, "隐式乘法-常量");
 close(calc.evaluate("-2^2").value, -4, "一元负号与幂优先级");
 close(calc.evaluate("2^3^2").value, 512, "幂右结合");
 close(calc.evaluate("5!").value, 120, "阶乘");
+close(calc.evaluate("2**3").value, 8, "双星号幂运算");
 
 // 函数与角度制
 close(calc.evaluate("sin(30)", { deg: true }).value, 0.5, "DEG 正弦");
@@ -69,13 +70,21 @@ bad("1/0", "除零");
 bad("sqrt(-1)", "负数开方");
 bad("d/dx(x^2)", "导数参数不足");
 bad("sin(", "括号未闭合");
+bad("1.2.3", "多个小数点");
+bad("asin(2)", "反正弦定义域");
+bad("ln(-1)", "对数定义域");
+bad("tan(90)", "正切渐近线 DEG", { deg: true });
+bad("tan(pi/2)", "正切渐近线 RAD");
+close(calc.evaluate("tan(90)").value, Math.tan(90), "RAD 下 tan(90) 仍可计算");
 
 // Desmos LaTeX
 assert.strictEqual(calc.graphLatex("x^2+2x"), "x^{2}+2x", "LaTeX-多项式");
 assert.strictEqual(calc.graphLatex("sin(x)"), "\\sin\\left(x\\right)", "LaTeX-三角");
 assert.strictEqual(calc.graphLatex("sqrt(x)"), "\\sqrt{x}", "LaTeX-根号");
 assert.strictEqual(calc.graphLatex("d/dx(x^2,3)"), "x^{2}", "LaTeX-导数取内层函数");
-passed += 4;
+assert.strictEqual(calc.graphLatex("abs(x)"), "\\left|x\\right|", "LaTeX-绝对值");
+assert.strictEqual(calc.graphLatex("exp(x)"), "e^{x}", "LaTeX-指数");
+passed += 6;
 
 // 绘图源提取（canvas 降级与 d/dx、∫ 联动）
 assert.strictEqual(calc.graphSource("x^2+2x"), "x^2+2x", "graphSource-普通表达式");

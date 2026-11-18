@@ -26,6 +26,7 @@
         let j = i, dots = 0;
         while (j < s.length && (/[0-9]/.test(s[j]) || (s[j] === "." && dots++ === 0))) j++;
         if (j === i) { i++; continue; }
+        if (s[j] === ".") throw new Error("小数点重复：" + s.slice(i, j + 1));
         if (j < s.length && (s[j] === "e" || s[j] === "E")) {
           let k = j + 1;
           if (s[k] === "+" || s[k] === "-") k++;
@@ -55,7 +56,8 @@
       }
 
       const ops = { "×": "*", "÷": "/", "−": "-", "^": "^", "+": "+", "-": "-", "*": "*", "/": "/", "(": "(", ")": ")", ",": ",", "!": "!", "∫": "∫" };
-      const ch = s[i] === "**" ? "*" : ops[c];
+      if (s.slice(i, i + 2) === "**") { out.push({ type: "op", v: "^" }); i += 2; continue; }
+      const ch = ops[c];
       if (ch) { out.push({ type: "op", v: ch }); i++; continue; }
       throw new Error("无法识别的符号：" + c);
     }
@@ -229,15 +231,30 @@
         switch (n.name) {
           case "sin": return Math.sin(rad);
           case "cos": return Math.cos(rad);
-          case "tan": return Math.tan(rad);
-          case "asin": return back(Math.asin(v));
-          case "acos": return back(Math.acos(v));
+          case "tan": {
+            // DEG 下 90+180k 是渐近线；RAD 下用 cos≈0 判断（此时输入本身就是弧度）
+            const atPole = env.deg
+              ? Math.abs((((v % 180) + 180) % 180) - 90) < 1e-10
+              : Math.abs(Math.cos(rad)) < 1e-12;
+            if (atPole) throw new Error("正切函数在该角度无定义");
+            return Math.tan(rad);
+          }
+          case "asin":
+            if (v < -1 || v > 1) throw new Error("反正弦的参数必须在 -1 到 1 之间");
+            return back(Math.asin(v));
+          case "acos":
+            if (v < -1 || v > 1) throw new Error("反余弦的参数必须在 -1 到 1 之间");
+            return back(Math.acos(v));
           case "atan": return back(Math.atan(v));
           case "sinh": return Math.sinh(v);
           case "cosh": return Math.cosh(v);
           case "tanh": return Math.tanh(v);
-          case "ln": return Math.log(v);
-          case "log": return Math.log10(v);
+          case "ln":
+            if (v <= 0) throw new Error("对数的参数必须为正数");
+            return Math.log(v);
+          case "log":
+            if (v <= 0) throw new Error("对数的参数必须为正数");
+            return Math.log10(v);
           case "sqrt": if (v < 0) throw new Error("平方根的参数不能为负"); return Math.sqrt(v);
           case "abs": return Math.abs(v);
           case "exp": return Math.exp(v);
@@ -338,7 +355,14 @@
       }
       case "call": {
         const names = { sin: "\\sin", cos: "\\cos", tan: "\\tan", asin: "\\arcsin", acos: "\\arccos", atan: "\\arctan", ln: "\\ln", log: "\\log", sinh: "\\sinh", cosh: "\\cosh", tanh: "\\tanh" };
-        if (n.name === "sqrt") return "\\sqrt{" + nodeLatex(n.args[0]) + "}";
+        const a = n.args[0];
+        if (n.name === "sqrt") return "\\sqrt{" + nodeLatex(a) + "}";
+        if (n.name === "abs") return "\\left|" + nodeLatex(a) + "\\right|";
+        if (n.name === "exp") return "e^{" + nodeLatex(a) + "}";
+        if (n.name === "floor") return "\\lfloor " + nodeLatex(a) + " \\rfloor";
+        if (n.name === "ceil") return "\\lceil " + nodeLatex(a) + " \\rceil";
+        if (n.name === "round") return "\\mathrm{round}\\left(" + nodeLatex(a) + "\\right)";
+        if (n.name === "sign") return "\\mathrm{sgn}\\left(" + nodeLatex(a) + "\\right)";
         return (names[n.name] || n.name) + "\\left(" + n.args.map(nodeLatex).join(",") + "\\right)";
       }
       case "deriv": return "\\frac{d}{dx}" + wrap(n.fn);
