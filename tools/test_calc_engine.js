@@ -77,4 +77,12 @@ assert.strictEqual(calc.graphLatex("sqrt(x)"), "\\sqrt{x}", "LaTeX-根号");
 assert.strictEqual(calc.graphLatex("d/dx(x^2,3)"), "x^{2}", "LaTeX-导数取内层函数");
 passed += 4;
 
+// 绘图源提取（canvas 降级与 d/dx、∫ 联动）
+assert.strictEqual(calc.graphSource("x^2+2x"), "x^2+2x", "graphSource-普通表达式");
+assert.strictEqual(calc.graphSource("d/dx(sin(x),0)"), "sin(x)", "graphSource-导数取内层");
+assert.strictEqual(calc.graphSource("∫(x^2,0,1)"), "x^2", "graphSource-积分取内层");
+assert.strictEqual(calc.graphSource("d/dx(max(2,3),1)"), "max(2,3)", "graphSource-函数内逗号不误切");
+assert.strictEqual(calc.graphSource(""), "", "graphSource-空输入");
+passed += 5;
+
 console.log("calc-engine: " + passed + " checks passed");

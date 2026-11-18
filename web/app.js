@@ -247,7 +247,7 @@ function equalPress() {
     saveExam();
     if (graphInited) {
       try {
-        window.BCGraph.setExpression(window.BCCalc.graphLatex(exam.expr), exam.deg);
+        window.BCGraph.setExpression(window.BCCalc.graphLatex(exam.expr), exam.deg, exam.expr);
       } catch (e) {}
     }
   } else {
@@ -280,7 +280,7 @@ function examKey(action) {
     equalPress();
   } else if (action === "angle") {
     exam.deg = !exam.deg; saveExam(); updateExamScreen();
-    if (graphInited && window.BCGraph) window.BCGraph.setExpression(null, exam.deg);
+    if (graphInited && window.BCGraph) window.BCGraph.setExpression(null, exam.deg, exam.expr);
     graphStatus("角度制已切换为 " + (exam.deg ? "DEG" : "RAD"), "ok");
   } else if (action === "frac") {
     exam.frac = !exam.frac; saveExam(); updateExamScreen();
@@ -292,6 +292,7 @@ function switchView(view) {
   saveExam();
   $("viewStudy").hidden = view !== "study";
   $("viewExam").hidden = view !== "exam";
+  $("viewNotes").hidden = view !== "notes";
   document.querySelectorAll(".view-tab").forEach((tab) => {
     tab.classList.toggle("active", tab.dataset.view === view);
   });
@@ -302,7 +303,7 @@ function switchView(view) {
       window.BCGraph.init();
     }
     if (graphInited && window.BCGraph && window.BCCalc) {
-      try { window.BCGraph.setExpression(window.BCCalc.graphLatex(exam.expr), exam.deg); } catch (e) {}
+      try { window.BCGraph.setExpression(window.BCCalc.graphLatex(exam.expr), exam.deg, exam.expr); } catch (e) {}
     }
   }
 }
@@ -336,8 +337,16 @@ function initExamEvents() {
   });
   $("plotNow").addEventListener("click", () => {
     if (!window.BCGraph) return;
-    window.BCGraph.setExpression(window.BCCalc.graphLatex(exam.expr), exam.deg);
-    graphStatus("已绘制 " + exam.expr, "ok");
+    if (!exam.expr || !exam.expr.trim()) {
+      graphStatus("请先输入表达式再画图", "warn");
+      return;
+    }
+    try {
+      window.BCGraph.setExpression(window.BCCalc.graphLatex(exam.expr), exam.deg, exam.expr);
+      graphStatus("已绘制 " + exam.expr, "ok");
+    } catch (e) {
+      graphStatus("这个表达式暂时画不了：" + e.message, "warn");
+    }
   });
   $("graphClear").addEventListener("click", () => {
     window.BCGraph.clear();

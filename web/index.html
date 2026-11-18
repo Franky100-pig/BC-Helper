@@ -65,6 +65,16 @@ main { flex:1; width:100%; max-width:1120px; margin:0 auto; padding:20px 24px 36
 .cache-status { font-size:12px; margin-top:6px; color:var(--muted); }
 .cache-status.ready { color:var(--ok); }
 .cache-status.warn { color:var(--accent2); }
+.notes-card { max-width:760px; margin:0 auto; }
+.notes-card h2 { font-size:20px; }
+.notes-card > p { color:var(--muted); font-size:14px; }
+.notes-placeholder {
+  margin:24px 0; padding:40px 24px; text-align:center;
+  border:1px dashed var(--border); border-radius:14px; background:var(--inset);
+}
+.notes-placeholder-icon { font-size:34px; color:var(--accent); line-height:1; }
+.notes-placeholder h3 { margin:14px 0 8px; font-size:16px; }
+.notes-placeholder p { margin:0; color:var(--muted); font-size:13px; }
 .exam-grid { display:grid; grid-template-columns:minmax(330px,420px) minmax(0,1fr); gap:18px; align-items:start; }
 .calc-body {
   background:linear-gradient(160deg,#3c4450,#252c36); border:1px solid #1b2129;
@@ -187,6 +197,7 @@ footer { border-top:1px solid var(--border); padding:14px 24px; font-size:12px; 
   <div class="view-tabs" role="tablist">
     <button class="view-tab active" type="button" data-view="study">分步计算<small>Step-by-step</small></button>
     <button class="view-tab" type="button" data-view="exam">考场模式<small>991 计算器 + Desmos</small></button>
+    <button class="view-tab" type="button" data-view="notes">小讲义<small>Notes</small></button>
   </div>
 
   <div id="viewStudy">
@@ -361,6 +372,18 @@ footer { border-top:1px solid var(--border); padding:14px 24px; font-size:12px; 
         </div>
       </section>
     </div>
+  </div>
+  <div id="viewNotes" hidden>
+    <section class="card notes-card">
+      <h2>小讲义 (Lecture Notes)</h2>
+      <p>这里会放微积分 BC 的配套小讲义：把常考的求导 / 积分方法写成能对照课本的 short notes，每篇配一个小例子和常见陷阱。</p>
+      <div class="notes-placeholder">
+        <div class="notes-placeholder-icon">✎</div>
+        <h3>内容整理中 · coming soon</h3>
+        <p>计划收录：链式法则的识别技巧、换元与分部的选择策略、定积分的几何直觉、考场常见失分点。</p>
+      </div>
+      <p class="hint">现在先用左边两个视图：分步计算看推导过程，考场模式练手速。讲义上线后在这里直接读。</p>
+    </section>
   </div>
 </main>
 <footer>BC Helper · 本地计算，不上传任何表达式 · 引擎由 SymPy 驱动 · 首次访问后引擎缓存到浏览器，可离线使用</footer>

@@ -347,6 +347,21 @@
     return "";
   }
 
+  // 从 d/dx(f,a) / ∫(f,a,b) 中取出可画曲线的内层函数 f（按括号深度切分，避免 f 内含逗号出错）。
+  function graphSource(src) {
+    const s = String(src == null ? "" : src).trim();
+    const m = /^(?:d\/dx|∫|int)\s*\(/i.exec(s);
+    if (!m) return s;
+    let depth = 0;
+    for (let i = m[0].length - 1; i < s.length; i++) {
+      const c = s[i];
+      if (c === "(") depth++;
+      else if (c === ")") { depth--; if (depth === 0) return s.slice(m[0].length, i).split(",")[0].trim(); }
+      else if (c === "," && depth === 1) return s.slice(m[0].length, i).trim();
+    }
+    return s;
+  }
+
   function graphLatex(src) {
     const ast = parse(tokenize(src));
     const target = ast.t === "deriv" || ast.t === "integ" ? ast.fn : ast;
@@ -355,7 +370,7 @@
 
   const api = {
     tokenize: tokenize, parse: parse, evaluate: evaluate, compile: compile,
-    format: format, nodeLatex: nodeLatex, graphLatex: graphLatex,
+    format: format, nodeLatex: nodeLatex, graphLatex: graphLatex, graphSource: graphSource,
   };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   else global.BCCalc = api;
