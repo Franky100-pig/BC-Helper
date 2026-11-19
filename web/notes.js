@@ -161,6 +161,7 @@ window.BC_NOTES = (function () {
    * 视图框统一 0 0 640 300 左右，颜色全部走 CSS 变量，随深浅主题自动切换，
    * 不依赖网络 / canvas，离线可用。键名即 blocks 里 { fig: "键名" } 的引用。 */
   var figures = {};
+  figures["signchart"] = `<svg viewBox="0 0 640 300" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="First derivative sign chart"><text class="fig-label" x="60" y="40">f prime 的符号</text><line class="fig-axis" x1="70" y1="90" x2="590" y2="90"/><polygon points="590,90 580,85 580,95" fill="var(--muted)"/><line class="fig-axis" x1="220" y1="78" x2="220" y2="102"/><line class="fig-axis" x1="430" y1="78" x2="430" y2="102"/><text class="fig-small" x="220" y="72" text-anchor="middle">c1</text><text class="fig-small" x="430" y="72" text-anchor="middle">c2</text><text class="fig-label" x="145" y="82" text-anchor="middle" fill="var(--ok)">+</text><text class="fig-label" x="325" y="82" text-anchor="middle" fill="var(--bad)">−</text><text class="fig-label" x="510" y="82" text-anchor="middle" fill="var(--ok)">+</text><text class="fig-label" x="60" y="160">f 的行为</text><line class="fig-axis" x1="70" y1="210" x2="590" y2="210"/><text class="fig-label" x="145" y="200" text-anchor="middle">增 ↗</text><text class="fig-label" x="325" y="200" text-anchor="middle">减 ↘</text><text class="fig-label" x="510" y="200" text-anchor="middle">增 ↗</text><circle class="fig-pt2" cx="220" cy="210" r="5"/><circle class="fig-pt2" cx="430" cy="210" r="5"/><text class="fig-small" x="220" y="240" text-anchor="middle">极大 (f prime: + → −)</text><text class="fig-small" x="430" y="240" text-anchor="middle">极小 (f prime: − → +)</text></svg>`;
   figures["mvt"] = `<svg viewBox="0 0 640 300" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Mean Value Theorem secant and parallel tangent"><line class="fig-axis" x1="60.0" y1="250.0" x2="600.0" y2="250.0"/><line class="fig-axis" x1="60.0" y1="28.0" x2="60.0" y2="250.0"/><line class="fig-axis" x1="127.5" y1="246.0" x2="127.5" y2="254.0"/><text class="fig-small" x="127.5" y="268.0" text-anchor="middle">a</text><line class="fig-axis" x1="271.3" y1="246.0" x2="271.3" y2="254.0"/><text class="fig-small" x="271.3" y="268.0" text-anchor="middle">c</text><line class="fig-axis" x1="532.5" y1="246.0" x2="532.5" y2="254.0"/><text class="fig-small" x="532.5" y="268.0" text-anchor="middle">b</text><text class="fig-label" x="594.0" y="240.0" text-anchor="end">x</text><text class="fig-label" x="70.0" y="42.0">y</text><path class="fig-curve" d="M100.5 151.1 L103.5 152.5 L106.4 153.9 L109.4 155.2 L112.3 156.4 L115.3 157.6 L118.2 158.8 L121.2 159.9 L124.1 161.0 L127.1 162.0 L130.0 163.0 L133.0 163.9 L135.9 164.8 L138.9 165.6 L141.8 166.4 L144.8 167.1 L147.8 167.8 L150.7 168.5 L153.7 169.1 L156.6 169.7 L159.6 170.2 L162.5 170.7 L165.5 171.1 L168.4 171.6 L171.4 171.9 L174.3 172.3 L177.3 172.6 L180.2 172.8 L183.2 173.0 L186.1 173.2 L189.1 173.4 L192.0 173.5 L195.0 173.5 L198.0 173.6 L200.9 173.6 L203.9 173.5 L206.8 173.5 L209.8 173.4 L212.7 173.2 L215.7 173.1 L218.6 172.9 L221.6 172.6 L224.5 172.4 L227.5 172.1 L230.4 171.8 L233.4 171.4 L236.3 171.0 L239.3 170.6 L242.2 170.2 L245.2 169.7 L248.2 169.2 L251.1 168.7 L254.1 168.2 L257.0 167.6 L260.0 167.0 L262.9 166.4 L265.9 165.7 L268.8 165.0 L271.8 164.3 L274.7 163.6 L277.7 162.9 L280.6 162.1 L283.6 161.3 L286.5 160.5 L289.5 159.7 L292.5 158.8 L295.4 157.9 L298.4 157.1 L301.3 156.1 L304.3 155.2 L307.2 154.3 L310.2 153.3 L313.1 152.3 L316.1 151.3 L319.0 150.3 L322.0 149.3 L324.9 148.2 L327.9 147.2 L330.8 146.1 L333.8 145.0 L336.8 143.9 L339.7 142.8 L342.7 141.7 L345.6 140.5 L348.6 139.4 L351.5 138.2 L354.5 137.0 L357.4 135.8 L360.4 134.6 L363.3 133.4 L366.3 132.2 L369.2 131.0 L372.2 129.8 L375.1 128.5 L378.1 127.3 L381.0 126.0 L384.0 124.8 L387.0 123.5 L389.9 122.2 L392.9 121.0 L395.8 119.7 L398.8 118.4 L401.7 117.1 L404.7 115.8 L407.6 114.5 L410.6 113.3 L413.5 112.0 L416.5 110.7 L419.4 109.4 L422.4 108.1 L425.3 106.8 L428.3 105.5 L431.2 104.2 L434.2 102.9 L437.2 101.6 L440.1 100.3 L443.1 99.0 L446.0 97.8 L449.0 96.5 L451.9 95.2 L454.9 94.0 L457.8 92.7 L460.8 91.4 L463.7 90.2 L466.7 89.0 L469.6 87.7 L472.6 86.5 L475.5 85.3 L478.5 84.1 L481.5 82.9 L484.4 81.7 L487.4 80.5 L490.3 79.3 L493.3 78.2 L496.2 77.0 L499.2 75.9 L502.1 74.8 L505.1 73.7 L508.0 72.6 L511.0 71.5 L513.9 70.4 L516.9 69.4 L519.8 68.3 L522.8 67.3 L525.8 66.3 L528.7 65.3 L531.7 64.3 L534.6 63.4 L537.6 62.5 L540.5 61.5 L543.5 60.6 L546.4 59.8 L549.4 58.9 L552.3 58.1 L555.3 57.2 L558.2 56.5 L561.2 55.7 L564.1 54.9 L567.1 54.2 L570.0 53.5 L573.0 52.8"/><line class="fig-dash fig-curve2" x1="127.5" y1="162.1" x2="532.5" y2="64.1"/><line class="fig-curve2" x1="156.5" y1="192.2" x2="386.0" y2="136.7"/><circle class="fig-pt" cx="271.3" cy="164.5" r="4.5"/><text class="fig-label" x="279.3" y="156.5">P(c, f(c))</text><text class="fig-small" x="411.0" y="42.8" fill="var(--accent2)">割线斜率 = 切线斜率 = f prime(c)</text></svg>`;
 
   var articles = [
@@ -1198,6 +1199,45 @@ window.BC_NOTES = (function () {
           "若区间无限（如 <span class=\"tex\">[0,\\infty)</span>），还要检查 <span class=\"tex\">x\\to\\infty</span> 的极限",
         ] },
         { tip: "最常丢分的两处：① 忘记比较端点，只报了内部临界点；② 把「临界点」直接当「极值点」。候选点法不判断极值类型，只比大小，所以对闭区间最稳。" },
+      ],
+    },
+    {
+      id: "first-deriv",
+      cat: "u5",
+      topics: ["5.3", "5.4"],
+      tag: "方法",
+      title: "增减区间与一阶导数判定法",
+      lead: "导数的正负直接决定函数升降：f prime 正在增、负在减；临界点两侧符号是否翻转，决定它是不是极值点。",
+      blocks: [
+        { h: "1 · 导数符号与单调性" },
+        { ul: [
+          "在区间上 <span class=\"tex\">f'>0</span> <span class=\"tex\">\\Rightarrow</span> <span class=\"tex\">f</span> 递增；<span class=\"tex\">f'<0</span> <span class=\"tex\">\\Rightarrow</span> <span class=\"tex\">f</span> 递减",
+          "由 MVT 可证：任取两点，割线斜率等于某点导数，导数恒正即割线恒正",
+          "先找临界点，把定义域切成若干区间，逐段判断 <span class=\"tex\">f'</span> 符号",
+        ] },
+        { h: "2 · 符号表 sign chart" },
+        { steps: [
+          "解 <span class=\"tex\">f'(x)=0</span> 并找 <span class=\"tex\">f'</span> 不存在的点，按大小排在数轴上",
+          "每个区间挑一个测试点代入 <span class=\"tex\">f'</span>，标 + 或 −",
+          "由符号写增减区间：+ 增、− 减",
+          "看临界点两侧符号：+ → − 是极大，− → + 是极小，不变号不是极值",
+        ] },
+        { fig: "signchart", cap: "一阶导数符号表：c1 处由 + 变 − 是极大值，c2 处由 − 变 + 是极小值；f prime 不存在或为零的点都要列入数轴。" },
+        { h: "3 · 一阶导数判定法 First Derivative Test" },
+        { ul: [
+          "<span class=\"tex\">f'</span> 由 + 变 −：<span class=\"tex\">c</span> 是局部极大",
+          "<span class=\"tex\">f'</span> 由 − 变 +：<span class=\"tex\">c</span> 是局部极小",
+          "<span class=\"tex\">f'</span> 两侧同号：<span class=\"tex\">c</span> 不是极值（可能是水平拐点，如 <span class=\"tex\">x^{3}</span> 在 0）",
+          "优点：临界点处导数不存在也能用，比二阶判定适用范围广",
+        ] },
+        { h: "4 · 例题" },
+        "<span class=\"tex\">f(x)=x^{3}-3x</span>：",
+        { steps: [
+          "<span class=\"tex\">f'(x)=3x^{2}-3=3(x-1)(x+1)=0</span> 得临界点 <span class=\"tex\">x=\\pm1</span>。",
+          "数轴分段：<span class=\"tex\">(-\\infty,-1)</span> 上 <span class=\"tex\">f'>0</span>；<span class=\"tex\">(-1,1)</span> 上 <span class=\"tex\">f'<0</span>；<span class=\"tex\">(1,\\infty)</span> 上 <span class=\"tex\">f'>0</span>。",
+          "<span class=\"tex\">x=-1</span> 处 + → −，局部极大 <span class=\"tex\">f(-1)=2</span>；<span class=\"tex\">x=1</span> 处 − → +，局部极小 <span class=\"tex\">f(1)=-2</span>。",
+        ] },
+        { tip: "写增减区间时端点开闭：临界点处 f prime =0，严格来说区间写成开区间最安全（AP 两种都接受）。别把「递增区间」写成「f prime 递增」——前者看 f prime 的符号，后者看 f second 的符号。" },
       ],
     },
   ];
