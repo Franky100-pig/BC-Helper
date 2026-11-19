@@ -13,6 +13,7 @@
  *     { ul: [...] } -> 要点列表
  *     { steps: [...] } -> 例题的逐步解析（编号列表）
  *     { tip: "..."}-> 提示 / 常见坑
+ *     { fig: "key", cap: "..." } -> 内联 SVG 图示（key 见 figures）
  *
  * 中文优先，关键概念保留英文原名；公式符号按英文教材写法。
  * 内容是静态文案，直接当 HTML 用，所以 < 写成 &lt;、> 写成 &gt;。
@@ -155,6 +156,11 @@ window.BC_NOTES = (function () {
       { n: "10.15", t: "用幂级数表示函数 (Representing Functions)" },
     ] },
   ];
+
+  /* 内联 SVG 图示注册表。每篇讲义按需往这里加自己的图：
+   * 视图框统一 0 0 640 300 左右，颜色全部走 CSS 变量，随深浅主题自动切换，
+   * 不依赖网络 / canvas，离线可用。键名即 blocks 里 { fig: "键名" } 的引用。 */
+  var figures = {};
 
   var articles = [
     {
@@ -1191,6 +1197,12 @@ window.BC_NOTES = (function () {
       }).join("") + "</ol>";
       if (b.tip) return "<div class=\"note-callout\"><b>提示 · Tip</b><br>" + esc(b.tip) + "</div>";
       if (b.roadmap) return roadmapHtml(b.roadmap);
+      if (b.fig) {
+        var svg = figures[b.fig];
+        if (!svg) return "";
+        return '<figure class="note-figure">' + svg +
+          (b.cap ? '<figcaption>' + esc(b.cap) + '</figcaption>' : '') + '</figure>';
+      }
       return "";
     }).join("");
   }
@@ -1201,5 +1213,6 @@ window.BC_NOTES = (function () {
     byCat: byCat,
     find: find,
     blocksHtml: blocksHtml,
+    figures: figures,
   };
 })();

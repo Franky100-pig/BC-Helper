@@ -39,6 +39,12 @@ articles.forEach((a) => {
   });
   a.blocks.forEach((b) => {
     if (b && b.roadmap) assert.ok(catIds.has(b.roadmap), a.id + " 总览指向未知 Unit");
+    if (b && b.fig) {
+      assert.ok(notes.figures[b.fig], a.id + " 引用了不存在的图示 " + b.fig);
+      const svg = notes.figures[b.fig];
+      assert.ok(/^<svg[\s>]/.test(svg) && svg.includes("</svg>"), a.id + " 图示 " + b.fig + " 不是完整 SVG");
+      assert.ok(!/<script|on\w+=/.test(svg), a.id + " 图示 " + b.fig + " 含不安全标记");
+    }
   });
   const html = notes.blocksHtml(a.blocks);
   assert.ok(html.length > 100, a.id + " 正文过短");
