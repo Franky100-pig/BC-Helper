@@ -74,6 +74,14 @@ const u6Roadmap = notes.blocksHtml(notes.find("u6-overview").blocks);
 assert.equal((u6Roadmap.match(/roadmap-item done/g) || []).length, 10, "Unit 6 覆盖数量不符");
 assert.ok(u6Roadmap.includes('data-jump="u-sub"'), "总览缺少跳转到已覆盖讲义的按钮");
 
+// 本轮补的重点单元：Unit 10 全部覆盖，Unit 5 只剩 1 个主题待补
+const roadmapDone = (u) => (notes.blocksHtml(notes.find(u + "-overview").blocks).match(/roadmap-item done/g) || []).length;
+assert.equal(roadmapDone("u10"), 15, "Unit 10 应已全覆盖");
+assert.equal(roadmapDone("u5"), 11, "Unit 5 覆盖数量不符");
+assert.equal(roadmapDone("u4"), 6, "Unit 4 覆盖数量不符");
+assert.equal(roadmapDone("u7"), 6, "Unit 7 覆盖数量不符");
+assert.ok(articles.length >= 51, "讲义篇数不足");
+
 formulas.forEach((tex) => {
   assert.doesNotThrow(
     () => katex.renderToString(tex, { throwOnError: true, strict: "ignore" }),
