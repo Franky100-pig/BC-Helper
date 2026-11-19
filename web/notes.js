@@ -161,6 +161,7 @@ window.BC_NOTES = (function () {
    * 视图框统一 0 0 640 300 左右，颜色全部走 CSS 变量，随深浅主题自动切换，
    * 不依赖网络 / canvas，离线可用。键名即 blocks 里 { fig: "键名" } 的引用。 */
   var figures = {};
+  figures["concavity"] = `<svg viewBox="0 0 640 300" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Concavity and inflection point"><line class="fig-axis" x1="60.0" y1="223.4" x2="600.0" y2="223.4"/><line class="fig-axis" x1="180.0" y1="28.0" x2="180.0" y2="250.0"/><line class="fig-axis" x1="180.0" y1="219.4" x2="180.0" y2="227.4"/><text class="fig-small" x="180.0" y="241.4" text-anchor="middle">0</text><line class="fig-axis" x1="300.0" y1="219.4" x2="300.0" y2="227.4"/><text class="fig-small" x="300.0" y="241.4" text-anchor="middle">1</text><line class="fig-axis" x1="420.0" y1="219.4" x2="420.0" y2="227.4"/><text class="fig-small" x="420.0" y="241.4" text-anchor="middle">2</text><text class="fig-label" x="594.0" y="213.4" text-anchor="end">x</text><text class="fig-label" x="190.0" y="42.0">y</text><path class="fig-curve" d="M60.0 223.4 L63.3 218.0 L66.6 212.8 L69.9 207.8 L73.2 203.0 L76.5 198.3 L79.8 193.9 L83.1 189.7 L86.4 185.6 L89.7 181.7 L93.0 178.0 L96.3 174.5 L99.6 171.1 L102.9 167.9 L106.2 164.9 L109.5 162.0 L112.8 159.3 L116.1 156.8 L119.4 154.4 L122.7 152.2 L126.0 150.1 L129.3 148.1 L132.6 146.3 L135.9 144.7 L139.2 143.1 L142.5 141.7 L145.8 140.5 L149.1 139.4 L152.4 138.4 L155.7 137.5 L159.0 136.7 L162.3 136.1 L165.6 135.6 L168.9 135.1 L172.2 134.8 L175.5 134.7 L178.8 134.6 L182.1 134.6 L185.4 134.7 L188.7 134.9 L192.0 135.2 L195.3 135.6 L198.6 136.1 L201.9 136.6 L205.2 137.3 L208.5 138.0 L211.8 138.8 L215.1 139.7 L218.4 140.7 L221.7 141.7 L225.0 142.8 L228.3 143.9 L231.6 145.1 L234.9 146.4 L238.2 147.7 L241.5 149.1 L244.8 150.5 L248.1 152.0 L251.4 153.5 L254.7 155.0 L258.0 156.6 L261.3 158.2 L264.6 159.9 L267.9 161.6 L271.2 163.3 L274.5 165.0 L277.8 166.8 L281.1 168.6 L284.4 170.4 L287.7 172.2 L291.0 174.0 L294.3 175.8 L297.6 177.6 L300.9 179.5 L304.2 181.3 L307.5 183.1 L310.8 184.9 L314.1 186.7 L317.4 188.5 L320.7 190.3 L324.0 192.1 L327.3 193.9 L330.6 195.6 L333.9 197.3 L337.2 198.9 L340.5 200.6 L343.8 202.2 L347.1 203.8 L350.4 205.3 L353.7 206.8 L357.0 208.2 L360.3 209.6 L363.6 211.0 L366.9 212.2 L370.2 213.5 L373.5 214.7 L376.8 215.8 L380.1 216.8 L383.4 217.8 L386.7 218.7 L390.0 219.5 L393.3 220.3 L396.6 221.0 L399.9 221.6 L403.2 222.1 L406.5 222.5 L409.8 222.9 L413.1 223.1 L416.4 223.3 L419.7 223.4 L423.0 223.3 L426.3 223.2 L429.6 222.9 L432.9 222.6 L436.2 222.1 L439.5 221.5 L442.8 220.8 L446.1 220.0 L449.4 219.0 L452.7 218.0 L456.0 216.8 L459.3 215.4 L462.6 214.0 L465.9 212.4 L469.2 210.6 L472.5 208.8 L475.8 206.7 L479.1 204.6 L482.4 202.2 L485.7 199.8 L489.0 197.1 L492.3 194.3 L495.6 191.4 L498.9 188.3 L502.2 185.0 L505.5 181.5 L508.8 177.9 L512.1 174.1 L515.4 170.1 L518.7 166.0 L522.0 161.6 L525.3 157.1 L528.6 152.4 L531.9 147.4 L535.2 142.3 L538.5 137.0 L541.8 131.5 L545.1 125.8 L548.4 119.9 L551.7 113.8 L555.0 107.5 L558.3 100.9 L561.6 94.2 L564.9 87.2 L568.2 80.0 L571.5 72.5 L574.8 64.9 L578.1 57.0 L581.4 48.9 L584.7 40.5 L588.0 31.9"/><line class="fig-curve2 fig-dash" x1="102.0" y1="125.7" x2="282.0" y2="144.7"/><line class="fig-curve2 fig-dash" x1="378.0" y1="259.2" x2="558.0" y2="163.3"/><circle class="fig-pt2" cx="300.0" cy="179.0" r="5"/><text class="fig-label" x="308.0" y="197.0">拐点 x=1</text><text class="fig-small" x="108.0" y="54.6" fill="var(--accent2)">凹向下 f second &lt; 0</text><text class="fig-small" x="420.0" y="99.0" fill="var(--accent2)">凹向上 f second &gt; 0</text></svg>`;
   figures["signchart"] = `<svg viewBox="0 0 640 300" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="First derivative sign chart"><text class="fig-label" x="60" y="40">f prime 的符号</text><line class="fig-axis" x1="70" y1="90" x2="590" y2="90"/><polygon points="590,90 580,85 580,95" fill="var(--muted)"/><line class="fig-axis" x1="220" y1="78" x2="220" y2="102"/><line class="fig-axis" x1="430" y1="78" x2="430" y2="102"/><text class="fig-small" x="220" y="72" text-anchor="middle">c1</text><text class="fig-small" x="430" y="72" text-anchor="middle">c2</text><text class="fig-label" x="145" y="82" text-anchor="middle" fill="var(--ok)">+</text><text class="fig-label" x="325" y="82" text-anchor="middle" fill="var(--bad)">−</text><text class="fig-label" x="510" y="82" text-anchor="middle" fill="var(--ok)">+</text><text class="fig-label" x="60" y="160">f 的行为</text><line class="fig-axis" x1="70" y1="210" x2="590" y2="210"/><text class="fig-label" x="145" y="200" text-anchor="middle">增 ↗</text><text class="fig-label" x="325" y="200" text-anchor="middle">减 ↘</text><text class="fig-label" x="510" y="200" text-anchor="middle">增 ↗</text><circle class="fig-pt2" cx="220" cy="210" r="5"/><circle class="fig-pt2" cx="430" cy="210" r="5"/><text class="fig-small" x="220" y="240" text-anchor="middle">极大 (f prime: + → −)</text><text class="fig-small" x="430" y="240" text-anchor="middle">极小 (f prime: − → +)</text></svg>`;
   figures["mvt"] = `<svg viewBox="0 0 640 300" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Mean Value Theorem secant and parallel tangent"><line class="fig-axis" x1="60.0" y1="250.0" x2="600.0" y2="250.0"/><line class="fig-axis" x1="60.0" y1="28.0" x2="60.0" y2="250.0"/><line class="fig-axis" x1="127.5" y1="246.0" x2="127.5" y2="254.0"/><text class="fig-small" x="127.5" y="268.0" text-anchor="middle">a</text><line class="fig-axis" x1="271.3" y1="246.0" x2="271.3" y2="254.0"/><text class="fig-small" x="271.3" y="268.0" text-anchor="middle">c</text><line class="fig-axis" x1="532.5" y1="246.0" x2="532.5" y2="254.0"/><text class="fig-small" x="532.5" y="268.0" text-anchor="middle">b</text><text class="fig-label" x="594.0" y="240.0" text-anchor="end">x</text><text class="fig-label" x="70.0" y="42.0">y</text><path class="fig-curve" d="M100.5 151.1 L103.5 152.5 L106.4 153.9 L109.4 155.2 L112.3 156.4 L115.3 157.6 L118.2 158.8 L121.2 159.9 L124.1 161.0 L127.1 162.0 L130.0 163.0 L133.0 163.9 L135.9 164.8 L138.9 165.6 L141.8 166.4 L144.8 167.1 L147.8 167.8 L150.7 168.5 L153.7 169.1 L156.6 169.7 L159.6 170.2 L162.5 170.7 L165.5 171.1 L168.4 171.6 L171.4 171.9 L174.3 172.3 L177.3 172.6 L180.2 172.8 L183.2 173.0 L186.1 173.2 L189.1 173.4 L192.0 173.5 L195.0 173.5 L198.0 173.6 L200.9 173.6 L203.9 173.5 L206.8 173.5 L209.8 173.4 L212.7 173.2 L215.7 173.1 L218.6 172.9 L221.6 172.6 L224.5 172.4 L227.5 172.1 L230.4 171.8 L233.4 171.4 L236.3 171.0 L239.3 170.6 L242.2 170.2 L245.2 169.7 L248.2 169.2 L251.1 168.7 L254.1 168.2 L257.0 167.6 L260.0 167.0 L262.9 166.4 L265.9 165.7 L268.8 165.0 L271.8 164.3 L274.7 163.6 L277.7 162.9 L280.6 162.1 L283.6 161.3 L286.5 160.5 L289.5 159.7 L292.5 158.8 L295.4 157.9 L298.4 157.1 L301.3 156.1 L304.3 155.2 L307.2 154.3 L310.2 153.3 L313.1 152.3 L316.1 151.3 L319.0 150.3 L322.0 149.3 L324.9 148.2 L327.9 147.2 L330.8 146.1 L333.8 145.0 L336.8 143.9 L339.7 142.8 L342.7 141.7 L345.6 140.5 L348.6 139.4 L351.5 138.2 L354.5 137.0 L357.4 135.8 L360.4 134.6 L363.3 133.4 L366.3 132.2 L369.2 131.0 L372.2 129.8 L375.1 128.5 L378.1 127.3 L381.0 126.0 L384.0 124.8 L387.0 123.5 L389.9 122.2 L392.9 121.0 L395.8 119.7 L398.8 118.4 L401.7 117.1 L404.7 115.8 L407.6 114.5 L410.6 113.3 L413.5 112.0 L416.5 110.7 L419.4 109.4 L422.4 108.1 L425.3 106.8 L428.3 105.5 L431.2 104.2 L434.2 102.9 L437.2 101.6 L440.1 100.3 L443.1 99.0 L446.0 97.8 L449.0 96.5 L451.9 95.2 L454.9 94.0 L457.8 92.7 L460.8 91.4 L463.7 90.2 L466.7 89.0 L469.6 87.7 L472.6 86.5 L475.5 85.3 L478.5 84.1 L481.5 82.9 L484.4 81.7 L487.4 80.5 L490.3 79.3 L493.3 78.2 L496.2 77.0 L499.2 75.9 L502.1 74.8 L505.1 73.7 L508.0 72.6 L511.0 71.5 L513.9 70.4 L516.9 69.4 L519.8 68.3 L522.8 67.3 L525.8 66.3 L528.7 65.3 L531.7 64.3 L534.6 63.4 L537.6 62.5 L540.5 61.5 L543.5 60.6 L546.4 59.8 L549.4 58.9 L552.3 58.1 L555.3 57.2 L558.2 56.5 L561.2 55.7 L564.1 54.9 L567.1 54.2 L570.0 53.5 L573.0 52.8"/><line class="fig-dash fig-curve2" x1="127.5" y1="162.1" x2="532.5" y2="64.1"/><line class="fig-curve2" x1="156.5" y1="192.2" x2="386.0" y2="136.7"/><circle class="fig-pt" cx="271.3" cy="164.5" r="4.5"/><text class="fig-label" x="279.3" y="156.5">P(c, f(c))</text><text class="fig-small" x="411.0" y="42.8" fill="var(--accent2)">割线斜率 = 切线斜率 = f prime(c)</text></svg>`;
 
@@ -1238,6 +1239,46 @@ window.BC_NOTES = (function () {
           "<span class=\"tex\">x=-1</span> 处 + → −，局部极大 <span class=\"tex\">f(-1)=2</span>；<span class=\"tex\">x=1</span> 处 − → +，局部极小 <span class=\"tex\">f(1)=-2</span>。",
         ] },
         { tip: "写增减区间时端点开闭：临界点处 f prime =0，严格来说区间写成开区间最安全（AP 两种都接受）。别把「递增区间」写成「f prime 递增」——前者看 f prime 的符号，后者看 f second 的符号。" },
+      ],
+    },
+    {
+      id: "concavity-inflexion",
+      cat: "u5",
+      topics: ["5.6", "5.7"],
+      tag: "概念",
+      title: "凹凸性、拐点与二阶导数判定法",
+      lead: "f second 的正负描述曲线弯曲方向：正为凹向上（杯口朝上）、负为凹向下；弯曲方向改变的点就是拐点。",
+      blocks: [
+        { h: "1 · 凹凸 concave up / down" },
+        { ul: [
+          "<span class=\"tex\">f''>0</span>：<b>凹向上</b> concave up，斜率在增大，切线在曲线下方",
+          "<span class=\"tex\">f''<0</span>：<b>凹向下</b> concave down，斜率在减小，切线在曲线上方",
+          "记忆：凹向上像杯子 <span class=\"tex\">\\cup</span> 能装水，凹向下像帽子 <span class=\"tex\">\\cap</span>",
+        ] },
+        { fig: "concavity", cap: "凹向下（左）与凹向上（右）：虚线为切线；x=1 处凹凸性改变，是拐点。" },
+        { h: "2 · 拐点 inflection point" },
+        "<span class=\"tex\">f</span> 上凹凸性改变的点叫拐点。找法与找临界点类似：解 <span class=\"tex\">f''=0</span> 或找 <span class=\"tex\">f''</span> 不存在的点，再检查两侧符号是否真的翻转。",
+        { ul: [
+          "<span class=\"tex\">f''(c)=0</span> 只是候选，两侧同号就不是拐点（例 <span class=\"tex\">x^{4}</span> 在 0）",
+          "拐点是曲线上的点，答「拐点 (c, f(c))」，不要只报 x 坐标",
+          "<span class=\"tex\">f''</span> 不存在的点也可能是拐点（如有竖直切线的点）",
+        ] },
+        { h: "3 · 二阶导数判定法 Second Derivative Test" },
+        "若 <span class=\"tex\">f'(c)=0</span> 且 <span class=\"tex\">f</span> 在 <span class=\"tex\">c</span> 附近二阶可导：",
+        { ul: [
+          "<span class=\"tex\">f''(c)>0</span>：局部极小（凹向上，谷底）",
+          "<span class=\"tex\">f''(c)<0</span>：局部极大（凹向下，峰顶）",
+          "<span class=\"tex\">f''(c)=0</span>：判定失效，改用一阶导数判定法",
+          "缺点：只适用于 <span class=\"tex\">f'(c)=0</span> 且 <span class=\"tex\">f''</span> 存在的点",
+        ] },
+        { h: "4 · 一阶 vs 二阶判定怎么选" },
+        { ul: [
+          "<span class=\"tex\">f'</span> 好求、<span class=\"tex\">f''</span> 复杂 → 用一阶符号表",
+          "临界点少、<span class=\"tex\">f''</span> 代入快 → 二阶判定省事",
+          "题目要求增减区间 → 必须做一阶符号表，顺便得到极值",
+          "二阶判定失效（<span class=\"tex\">f''=0</span>）→ 回到一阶判定",
+        ] },
+        { tip: "AP 高频：给 f prime 或 f second 的图像问 f 的凹凸/极值。记住链条——f prime 的增减决定 f second 的符号，f second 的符号决定 f 的凹凸；f prime 的零点和变号决定 f 的极值。" },
       ],
     },
   ];
