@@ -480,6 +480,7 @@ function initEvents() {
  * 左侧分类目录 + 右侧正文，hash = #notes/<id> 可分享、可前进后退。 */
 const NOTES = window.BC_NOTES;
 let currentNote = null;
+const collapsedCats = new Set();
 
 function noteIdFromHash() {
   const m = /^#notes\/([\w-]+)$/.exec(location.hash || "");
@@ -490,12 +491,27 @@ function renderNotesNav(activeId) {
   const nav = $("notesNav");
   if (!nav || !NOTES) return;
   nav.innerHTML = NOTES.byCat().map((cat) => {
+    const collapsed = collapsedCats.has(cat.id);
     const items = cat.items.map((a) =>
       `<button type="button" class="note-nav${a.id === activeId ? " active" : ""}" data-note="${a.id}">` +
       `${escapeHtml(a.title)}<small>${escapeHtml(a.tag)}</small></button>`
     ).join("");
-    return `<div class="note-cat"><div class="note-cat-label">${escapeHtml(cat.label)}</div>${items}</div>`;
+    return `<div class="note-cat${collapsed ? " collapsed" : ""}">` +
+      `<button type="button" class="note-cat-label" data-cat="${cat.id}" aria-expanded="${!collapsed}">` +
+      `<span class="cat-arrow" aria-hidden="true">▾</span>${escapeHtml(cat.label)}</button>` +
+      `<div class="note-cat-items">${items}</div></div>`;
   }).join("");
+  nav.querySelectorAll(".note-cat-label").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const id = btn.dataset.cat;
+      if (collapsedCats.has(id)) collapsedCats.delete(id);
+      else collapsedCats.add(id);
+      const cat = btn.parentElement;
+      const collapsed = collapsedCats.has(id);
+      cat.classList.toggle("collapsed", collapsed);
+      btn.setAttribute("aria-expanded", String(!collapsed));
+    });
+  });
   nav.querySelectorAll(".note-nav").forEach((btn) => {
     btn.addEventListener("click", () => openNote(btn.dataset.note));
   });
