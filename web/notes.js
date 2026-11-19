@@ -1161,6 +1161,45 @@ window.BC_NOTES = (function () {
         { tip: "MVT 只保证 c 存在，不告诉你 c 在哪。AP 里几乎不会让你精确解出 c，更多是「说明存在」或「估计范围」。别忘了写条件：闭连续、开可导，少写一个就扣分。" },
       ],
     },
+    {
+      id: "evt-critical",
+      cat: "u5",
+      topics: ["5.2", "5.5"],
+      tag: "定理",
+      title: "极值定理、临界点与候选点法",
+      lead: "闭区间上连续的函数一定取到最大最小；找它们只需检查两类点——导数为零或不存在的临界点，以及区间端点。",
+      blocks: [
+        { h: "1 · 极值定理 EVT" },
+        "若 <span class=\"tex\">f</span> 在<b>闭区间</b> <span class=\"tex\">[a,b]</span> 上连续，则 <span class=\"tex\">f</span> 必在 <span class=\"tex\">[a,b]</span> 上取到全局最大值和全局最小值。",
+        { ul: [
+          "两个关键词：闭区间、连续，缺一不可",
+          "开区间 <span class=\"tex\">(a,b)</span> 或有间断点时可能取不到（如 <span class=\"tex\">f(x)=1/x</span> 在 <span class=\"tex\">(0,1)</span>）",
+          "极值可能出现在区间内部，也可能出现在端点",
+        ] },
+        { h: "2 · 临界点 critical point" },
+        "<span class=\"tex\">c</span> 是 <span class=\"tex\">f</span> 的临界点，若 <span class=\"tex\">c</span> 在定义域内且 <span class=\"tex\">f'(c)=0</span> 或 <span class=\"tex\">f'(c)</span> 不存在。",
+        { ul: [
+          "<span class=\"tex\">f'(c)=0</span>：水平切线（峰顶、谷底、或水平拐点）",
+          "<span class=\"tex\">f'(c)</span> 不存在：尖角、竖直切线、不连续点",
+          "临界点<b>不一定</b>是极值点（例：<span class=\"tex\">x^{3}</span> 在 0 处导数为 0 但不是极值）",
+          "反过来，内部极值点<b>一定</b>是临界点（Fermat 定理）",
+        ] },
+        { h: "3 · 候选点法找全局极值" },
+        "闭区间上求全局最大/最小，把有限个候选点的函数值列出来比大小即可：",
+        { steps: [
+          "求 <span class=\"tex\">f'</span>，解 <span class=\"tex\">f'(x)=0</span>，并找出 <span class=\"tex\">f'</span> 不存在的点 → 得到区间内所有临界点",
+          "候选点 = 这些临界点，再加上两个端点 <span class=\"tex\">a,b</span>",
+          "逐个代入 <span class=\"tex\">f</span> 算函数值，最大即全局最大，最小即全局最小",
+        ] },
+        { h: "4 · 局部极值 vs 全局极值" },
+        { ul: [
+          "局部极大：附近邻域里最大；全局最大：整个定义域里最大",
+          "全局极值一定是局部极值（端点除外），局部极值未必全局",
+          "若区间无限（如 <span class=\"tex\">[0,\\infty)</span>），还要检查 <span class=\"tex\">x\\to\\infty</span> 的极限",
+        ] },
+        { tip: "最常丢分的两处：① 忘记比较端点，只报了内部临界点；② 把「临界点」直接当「极值点」。候选点法不判断极值类型，只比大小，所以对闭区间最稳。" },
+      ],
+    },
   ];
 
   function byCat() {
