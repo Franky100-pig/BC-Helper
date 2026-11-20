@@ -229,21 +229,26 @@ async function compute() {
     }
   }
   $("answerBox").className = "answer placeholder";
-  $("answerBox").textContent = "计算中…";
   $("stepsBox").innerHTML = "";
+  const computeBtn = $("compute");
   try {
-    let res;
-    if (window.BC && window.BC.ready && window.BC.dispatch) {
-      res = await window.BC.dispatch(payload);
-    } else {
-      // SymPy 在后台线程启动，页面不会卡；没就绪时给明确提示，
-      // 引导到纯 JS 的考场模式（不依赖 SymPy，离线也能用）。
-      renderError("推导引擎还在后台加载（首次约十几秒，之后自动秒开）。" +
-        "页面可继续用「考场模式」算数值，或稍后点「计算」重试。");
-      return;
+    // 引擎按需启动：第一次点「计算」才下载 / 编译 SymPy，页面其余功能不受影响。
+    // ensureReady 在引擎就绪后 resolve，本次点击会排队等它，而不是被丢掉。
+    if (!(window.BC && window.BC.ready)) {
+      if (!window.BC || typeof window.BC.ensureReady !== "function") {
+        renderError("推导引擎脚本未加载，请刷新页面重试。");
+        return;
+      }
+      $("answerBox").textContent = "首次计算：正在后台启动推导引擎（约 1 分钟），启动后会自动算出结果…";
+      if (computeBtn) computeBtn.disabled = true;
+      await window.BC.ensureReady();
+      if (computeBtn) computeBtn.disabled = false;
     }
+    $("answerBox").textContent = "计算中…";
+    const res = await window.BC.dispatch(payload);
     renderResult(res);
   } catch (err) {
+    if (computeBtn) computeBtn.disabled = false;
     renderError("计算失败：" + err.message);
   }
 }

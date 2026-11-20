@@ -94,4 +94,18 @@ assert.strictEqual(calc.graphSource("d/dx(max(2,3),1)"), "max(2,3)", "graphSourc
 assert.strictEqual(calc.graphSource(""), "", "graphSource-空输入");
 passed += 5;
 
+// 引擎按需启动：bridge 不再在页面加载时自动 boot，compute 会 await ensureReady
+const fs = require("fs");
+const path = require("path");
+const bridgeSrc = fs.readFileSync(path.join(__dirname, "../web/bridge.js"), "utf8");
+const appSrc = fs.readFileSync(path.join(__dirname, "../web/app.js"), "utf8");
+const htmlSrc = fs.readFileSync(path.join(__dirname, "../web/index.html"), "utf8");
+assert.ok(/window\.BC\.ensureReady\s*=/.test(bridgeSrc), "bridge 缺少 ensureReady 接口");
+assert.ok(!/\nboot\(\);\s*$/m.test(bridgeSrc.replace(/\/\/.*$/gm, "")),
+  "bridge 不应在加载时自动 boot()");
+assert.ok(/await window\.BC\.ensureReady\(\)/.test(appSrc), "compute 未等待引擎就绪");
+assert.ok(/id="compute"[^>]*class="primary"[^>]*>\s*计算/.test(htmlSrc) &&
+  !/id="compute"[^>]*disabled/.test(htmlSrc), "计算按钮不应初始 disabled");
+passed += 4;
+
 console.log("calc-engine: " + passed + " checks passed");

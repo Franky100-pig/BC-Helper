@@ -156,7 +156,16 @@ function failBoot(message) {
   setProgress(0);
   setStatus("引擎加载失败：" + message, "error");
   showRetry();
+  notifyReady(message);
   if (bootResolve) { bootResolve(); bootResolve = null; }
+}
+
+/* 按需启动：页面加载时不再编译 WASM。第一次点「计算」才 boot，讲义和考场
+ * 模式（纯 JS 数值引擎）因此秒开。等待者队列让「首次计算」在引擎就绪后
+ * 自动续跑，而不是丢掉这次点击。boot 本身幂等，重复调用安全。 */
+const readyWaiters = [];
+function notifyReady(err) {
+  readyWaiters.splice(0).forEach((fn) => fn(err));
 }
 
 function onWorkerMessage(event) {
@@ -174,6 +183,7 @@ function onWorkerMessage(event) {
     reportCacheStatus(true);
     const computeBtn = document.getElementById("compute");
     if (computeBtn) computeBtn.disabled = false;
+    notifyReady();
     if (bootResolve) { bootResolve(); bootResolve = null; }
     return;
   }
@@ -231,6 +241,7 @@ function bootInline() {
       setProgress(0);
       setStatus("引擎加载失败：" + lastError, "error");
       showRetry();
+      notifyReady(lastError);
       return;
     }
     try {
@@ -255,10 +266,12 @@ function bootInline() {
       reportCacheStatus(true);
       const computeBtn = document.getElementById("compute");
       if (computeBtn) computeBtn.disabled = false;
+      notifyReady();
     } catch (err) {
       window.BC.error = String(err);
       setStatus("引擎初始化失败：" + String(err), "error");
       showRetry();
+      notifyReady(String(err));
     }
   })();
 }
@@ -304,5 +317,14 @@ function boot() {
   return started;
 }
 
+/* 按需启动：返回 Promise，就绪时 resolve，失败时 reject。
+ * 页面加载不再自动 boot —— 第一次求导 / 积分点「计算」时才触发。 */
+window.BC.ensureReady = () => new Promise((resolve, reject) => {
+  if (window.BC.ready) { resolve(); return; }
+  if (window.BC.error) { reject(new Error(window.BC.error)); return; }
+  readyWaiters.push((err) => (err ? reject(new Error(err)) : resolve()));
+  boot();
+});
+
 window.BC.retry = boot;
-boot();
+// 不再在页面加载时自动启动引擎；由第一次「计算」经 ensureReady 触发。
