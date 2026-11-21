@@ -612,3 +612,54 @@ let notesMathTries = 0;
 const notesMathTimer = setInterval(() => {
   if (renderNotesMath() || ++notesMathTries > 40) clearInterval(notesMathTimer);
 }, 150);
+
+// ---------------------------------------------------------------------------
+// 页脚「使用人数」：静态页没有后端，用免费的第三方计数器（Abacus）取总数。
+// 只在「本机第一次打开」时 +1（localStorage 去重），之后只读 —— 数字≈人数，而非刷新次数。
+// 拿不到 localStorage（隐私模式 / file://）时一律只读，避免每次刷新都虚增。
+// 任何失败（离线 / 被墙 / 接口挂了）都保持整行隐藏，绝不给用户看 0 或报错。
+// ---------------------------------------------------------------------------
+(function initUsageCounter() {
+  const row = document.getElementById("usageRow");
+  if (!row) return;
+  const NS = "bc-helper-franky100";
+  const KEY = "visitors";
+  const API = "https://abacus.jasoncameron.dev";
+  const MARK = "{n} 人用 BC Helper 学微积分";
+  let count = null;
+
+  function lsGet(k) { try { return localStorage.getItem(k); } catch (_) { return null; } }
+  function canStore() {
+    try { localStorage.setItem("bc-probe", "1"); localStorage.removeItem("bc-probe"); return true; }
+    catch (_) { return false; }
+  }
+
+  // 用文本节点拼，数字加粗夹在前后文字之间，天然防注入。
+  function render() {
+    if (count == null) return;
+    const parts = MARK.split("{n}");
+    row.textContent = "";
+    row.appendChild(document.createTextNode(parts[0] || ""));
+    const b = document.createElement("b");
+    b.textContent = Number(count).toLocaleString();
+    row.appendChild(b);
+    row.appendChild(document.createTextNode(parts[1] || ""));
+    row.hidden = false;
+  }
+
+  async function load() {
+    try {
+      const counted = lsGet("bc-counted") === "1";
+      const mode = (counted || !canStore()) ? "get" : "hit";  // 存不了就只读，绝不虚增
+      const res = await fetch(API + "/" + mode + "/" + NS + "/" + KEY, { cache: "no-store" });
+      if (!res.ok) return;
+      const data = await res.json();
+      if (typeof data.value !== "number") return;
+      count = data.value;
+      if (mode === "hit") { try { localStorage.setItem("bc-counted", "1"); } catch (_) {} }
+      render();
+    } catch (_) { /* 离线 / 失败：整行保持隐藏 */ }
+  }
+
+  load();
+})();

@@ -236,6 +236,9 @@ button.ghost:hover { border-color:var(--accent); color:var(--accent); }
 .result-actions span { font-size:12px; color:var(--muted); }
 .error-box { background:var(--inset); border-left:3px solid var(--bad); padding:12px 14px; color:var(--bad); border-radius:8px; }
 footer { border-top:1px solid var(--border); padding:14px 24px; font-size:12px; color:var(--muted); text-align:center; }
+/* 页脚使用人数：第三方计数拿不到时 JS 会整行隐藏（默认 hidden） */
+.usage-line { text-align:center; color:var(--muted); font-size:13px; margin:26px auto 0; padding:0 16px; }
+.usage-line b { color:var(--accent); font-weight:700; font-size:15px; }
 @media (max-width:900px) {
   .workspace, .exam-grid, .notes-layout { grid-template-columns:1fr; }
   .notes-side { position:static; }
@@ -453,6 +456,8 @@ footer { border-top:1px solid var(--border); padding:14px 24px; font-size:12px; 
     </div>
   </div>
 </main>
+<!-- 页脚使用人数（免费第三方计数器，拿不到数字时整行保持隐藏；逻辑在 app.js 末尾） -->
+<p id="usageRow" class="usage-line" hidden></p>
 <footer>BC Helper · 本地计算，不上传任何表达式 · 引擎由 SymPy 驱动 · 首次访问后引擎缓存到浏览器，可离线使用</footer>
 
 <script src="core_bundle.js"></script>

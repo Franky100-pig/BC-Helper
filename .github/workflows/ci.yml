@@ -27,6 +27,7 @@ jobs:
       - run: pip install -r requirements-dev.txt
       - run: pytest
       - run: node tools/test_calc_engine.js
+      - run: node tools/test_counter.js
       - name: Fetch KaTeX
         run: python tools/fetch_katex.py
       - run: node tools/test_notes.js
