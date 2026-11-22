@@ -74,7 +74,10 @@ assert.equal((u1Roadmap.match(/roadmap-item done/g) || []).length, 16, "Unit 1 �
 assert.equal((u1Roadmap.match(/roadmap-item todo/g) || []).length, 0, "Unit 1 不应还有待补主题");
 assert.ok(u1Roadmap.includes('data-jump="squeeze"'), "Unit 1 总览缺少跳转到夹逼定理的按钮");
 const u6Roadmap = notes.blocksHtml(notes.find("u6-overview").blocks);
-assert.equal((u6Roadmap.match(/roadmap-item done/g) || []).length, 10, "Unit 6 覆盖数量不符");
+const u6Done = (u6Roadmap.match(/roadmap-item done/g) || []).length;
+const u6Todo = (u6Roadmap.match(/roadmap-item todo/g) || []).length;
+assert.equal(u6Done + u6Todo, 14, "Unit 6 主题总数应为 14");
+assert.ok(u6Done >= 10, "Unit 6 已覆盖主题不应减少");
 assert.ok(u6Roadmap.includes('data-jump="u-sub"'), "总览缺少跳转到已覆盖讲义的按钮");
 
 // 本轮补的重点单元：Unit 10 全部覆盖，Unit 5 只剩 1 个主题待补
