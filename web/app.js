@@ -2,6 +2,8 @@
 
 const $ = (id) => document.getElementById(id);
 const STORE = "bc-state-v1";
+const t = (s) => (window.BC_I18N ? window.BC_I18N.t(s) : s);
+let lastPayload = null;
 
 const EXAMPLES = {
   derivative: [
@@ -94,7 +96,7 @@ function renderExprPreview() {
   if (!box || !window.katex) return false;
   const raw = $("expr").value.trim();
   if (!raw) {
-    box.innerHTML = '<span class="expr-preview-empty">输入表达式后显示标准数学排版</span>';
+    box.innerHTML = '<span class="expr-preview-empty">' + escapeHtml(t("输入表达式后显示标准数学排版")) + '</span>';
     return true;
   }
   const f = latexOf(raw);
@@ -129,7 +131,7 @@ function renderExamples() {
     const btn = document.createElement("button");
     btn.type = "button";
     btn.className = "chip";
-    btn.textContent = ex.label;
+    btn.textContent = t(ex.label);
     btn.onclick = () => applyExample(ex);
     box.appendChild(btn);
   });
@@ -187,7 +189,7 @@ function renderSteps(steps) {
       ${note}
     </div>`;
   }).join("");
-  box.innerHTML = `<div class="steps-title">解题步骤 (worked steps)</div>${html}`;
+  box.innerHTML = `<div class="steps-title">${escapeHtml(t("解题步骤 (worked steps)"))}</div>${html}`;
 }
 
 function renderError(message) {
@@ -206,7 +208,7 @@ function renderResult(res) {
   const sec = $("secondaryBox");
   if (res.secondary) {
     sec.hidden = false;
-    sec.innerHTML = "原表达式 / 中间结果：" + math(res.secondary);
+    sec.innerHTML = escapeHtml(t("原表达式 / 中间结果：")) + math(res.secondary);
   } else {
     sec.hidden = true;
     sec.innerHTML = "";
@@ -236,15 +238,15 @@ async function compute() {
     // ensureReady 在引擎就绪后 resolve，本次点击会排队等它，而不是被丢掉。
     if (!(window.BC && window.BC.ready)) {
       if (!window.BC || typeof window.BC.ensureReady !== "function") {
-        renderError("推导引擎脚本未加载，请刷新页面重试。");
+        renderError(t("推导引擎脚本未加载，请刷新页面重试。"));
         return;
       }
-      $("answerBox").textContent = "首次计算：正在后台启动推导引擎，启动后会自动算出结果…";
+      $("answerBox").textContent = t("首次计算：正在后台启动推导引擎，启动后会自动算出结果…");
       if (computeBtn) computeBtn.disabled = true;
       // 把引擎的分阶段进度实时显示出来，避免「干等 1 分钟」的错觉。
       const answer = $("answerBox");
       window.BC.onProgress = (msg) => {
-        if (msg.status) answer.textContent = "首次启动（" + (msg.pct || 0) + "%）：" + msg.status;
+        if (msg.status) answer.textContent = t("首次启动（") + (msg.pct || 0) + t("%）：") + t(msg.status);
       };
       try {
         await window.BC.ensureReady();
@@ -253,12 +255,13 @@ async function compute() {
         if (computeBtn) computeBtn.disabled = false;
       }
     }
-    $("answerBox").textContent = "计算中…";
+    $("answerBox").textContent = t("计算中…");
+    lastPayload = payload;
     const res = await window.BC.dispatch(payload);
     renderResult(res);
   } catch (err) {
     if (computeBtn) computeBtn.disabled = false;
-    renderError("计算失败：" + err.message);
+    renderError(t("计算失败：") + t(err.message));
   }
 }
 
@@ -329,8 +332,9 @@ function equalPress() {
     }
   } else {
     out.className = "result error";
-    const msg = res.error.indexOf("x 赋值") !== -1
-      ? "含变量 x · 试试 d/dx(函数, 点) 或 ∫(函数, 下限, 上限)"
+    const hint = /x 赋值|assigned a value|variable x/i.test(res.error || "");
+    const msg = hint
+      ? t("含变量 x · 试试 d/dx(函数, 点) 或 ∫(函数, 下限, 上限)")
       : "Error · " + res.error;
     out.textContent = msg;
     exam.result = msg;
@@ -378,16 +382,16 @@ function examKey(action) {
     exam.deg = !exam.deg; saveExam(); updateExamScreen();
     if (graphInited && window.BCGraph) window.BCGraph.setExpression(null, exam.deg, exam.expr);
     const state = recomputeCurrent();
-    const detail = state === "ok" ? " · 当前表达式已按新单位重算"
-      : state === "ans" ? " · 含 Ans 的表达式按 = 重新计算"
-      : " · 表达式未算完，按 = 重新计算";
-    graphStatus("已切到 " + (exam.deg ? "DEG" : "RAD") + detail, state === "ok" ? "ok" : "warn");
+    const detail = state === "ok" ? t(" · 当前表达式已按新单位重算")
+      : state === "ans" ? t(" · 含 Ans 的表达式按 = 重新计算")
+      : t(" · 表达式未算完，按 = 重新计算");
+    graphStatus(t("已切到 ") + (exam.deg ? "DEG" : "RAD") + detail, state === "ok" ? "ok" : "warn");
   } else if (action === "frac") {
     exam.frac = !exam.frac; saveExam(); updateExamScreen();
     const state = recomputeCurrent();
     if (state !== "ok") {
-      graphStatus(state === "ans" ? "含 Ans 的表达式按 = 刷新结果"
-        : "显示格式已切换 · 按 = 刷新结果", "warn");
+      graphStatus(state === "ans" ? t("含 Ans 的表达式按 = 刷新结果")
+        : t("显示格式已切换 · 按 = 刷新结果"), "warn");
     }
   }
 }
@@ -448,19 +452,19 @@ function initExamEvents() {
   $("plotNow").addEventListener("click", () => {
     if (!window.BCGraph) return;
     if (!exam.expr || !exam.expr.trim()) {
-      graphStatus("请先输入表达式再画图", "warn");
+      graphStatus(t("请先输入表达式再画图"), "warn");
       return;
     }
     try {
       window.BCGraph.setExpression(window.BCCalc.graphLatex(exam.expr), exam.deg, exam.expr);
-      graphStatus("已绘制 " + exam.expr, "ok");
+      graphStatus(t("已绘制 ") + exam.expr, "ok");
     } catch (e) {
-      graphStatus("这个表达式暂时画不了：" + e.message, "warn");
+      graphStatus(t("这个表达式暂时画不了：") + t(e.message), "warn");
     }
   });
   $("graphClear").addEventListener("click", () => {
     window.BCGraph.clear();
-    graphStatus("已清空图像", "");
+    graphStatus(t("已清空图像"), "");
   });
   $("plotIn").addEventListener("click", () => window.BCGraph.zoom(0.6));
   $("plotOut").addEventListener("click", () => window.BCGraph.zoom(1.6));
@@ -536,7 +540,8 @@ function renderNoteArticle(id) {
   if (!box || !NOTES) return;
   const a = NOTES.find(id);
   if (!a) {
-    box.innerHTML = "<h2>小讲义</h2><p class='note-lead'>从左侧选一篇开始读。</p>";
+    box.innerHTML = "<h2>" + escapeHtml(t("小讲义")) + "</h2><p class='note-lead'>" +
+      escapeHtml(t("从左侧选一篇开始读。")) + "</p>";
     return;
   }
   box.innerHTML =
@@ -593,6 +598,14 @@ if (NOTES && NOTES.articles.length) currentNote = NOTES.articles[0].id;
 syncControls();
 initEvents();
 initExamEvents();
+if (window.BC_I18N && typeof window.BC_I18N.onChange === "function") {
+  window.BC_I18N.onChange(function () {
+    syncControls();
+    if (!$("viewNotes").hidden) renderNotesPage();
+    // 步骤里的中文/英文是引擎生成的；已就绪时重算一次让讲解跟着切换。
+    if (lastPayload && window.BC && window.BC.ready) compute();
+  });
+}
 updateExamScreen();
 // 上次的计算结果直接恢复，避免屏幕显示 0、Ans 却是上次数值的错位。
 if (exam.result && exam.result !== "0") {
@@ -634,7 +647,7 @@ const notesMathTimer = setInterval(() => {
   const NS = "bc-helper-franky100";
   const KEY = "visitors";
   const API = "https://abacus.jasoncameron.dev";
-  const MARK = "{n} 人用 BC Helper 学微积分";
+  const MARK = t("{n} 人用 BC Helper 学微积分");
   let count = null;
 
   function lsGet(k) { try { return localStorage.getItem(k); } catch (_) { return null; } }
@@ -646,7 +659,7 @@ const notesMathTimer = setInterval(() => {
   // 用文本节点拼，数字加粗夹在前后文字之间，天然防注入。
   function render() {
     if (count == null) return;
-    const parts = MARK.split("{n}");
+    const parts = t(MARK).split("{n}");
     row.textContent = "";
     row.appendChild(document.createTextNode(parts[0] || ""));
     const b = document.createElement("b");

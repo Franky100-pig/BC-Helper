@@ -2,6 +2,7 @@
 
 // 浏览器里的 SymPy 引擎：优先用同源 /pyodide/，失败再依次试公开镜像。
 window.BC = { ready: false, error: null, dispatch: null, retry: null };
+const t = (s) => (window.BC_I18N ? window.BC_I18N.t(s) : s);
 
 try {
   if (navigator.serviceWorker && location &&
@@ -58,15 +59,15 @@ function reportCacheStatus(ready) {
     const s = event.data.payload || {};
     if (s.engine) {
       el.className = "cache-status ready";
-      el.textContent = "✓ 引擎已装到浏览器 · " + s.files + " 个文件在本地，断网也能算";
+      el.textContent = t("✓ 引擎已装到浏览器 · ") + s.files + t(" 个文件在本地，断网也能算");
       navigator.serviceWorker.removeEventListener("message", onMsg);
     } else if (ready) {
       el.className = "cache-status warn";
-      el.textContent = "引擎已就绪，正在后台写入离线缓存…";
+      el.textContent = t("引擎已就绪，正在后台写入离线缓存…");
       setTimeout(ask, 3000);
     } else {
       el.className = "cache-status";
-      el.textContent = "首次启动：正在把引擎装进浏览器（约 19 MB）…";
+      el.textContent = t("首次启动：正在把引擎装进浏览器（约 19 MB）…");
     }
   };
   const ask = () => {
@@ -112,7 +113,7 @@ function withTimeout(promise, ms, tag) {
   return Promise.race([
     promise,
     new Promise((_, reject) =>
-      setTimeout(() => reject(new Error(tag + " 超时")), ms)),
+      setTimeout(() => reject(new Error(tag + t(" 超时"))), ms)),
   ]);
 }
 
@@ -124,11 +125,11 @@ function showRetry() {
   btn.type = "button";
   btn.className = "ghost";
   btn.style.marginLeft = "10px";
-  btn.textContent = "重试引擎";
+  btn.textContent = t("重试引擎");
   btn.onclick = () => {
     window.BC.error = null;
     btn.remove();
-    setStatus("正在重新加载计算引擎…");
+    setStatus(t("正在重新加载计算引擎…"));
     boot();
   };
   el.appendChild(btn);
@@ -153,14 +154,16 @@ let nextRequest = 0;
 const pending = new Map();
 
 window.BC.dispatch = (payload) => new Promise((resolve, reject) => {
+  const lang = window.BC_I18N ? window.BC_I18N.getLang() : "zh";
+  const request = Object.assign({}, payload, { lang: lang });
   if (!window.BC.ready || !worker) {
-    reject(new Error("推导引擎还在后台加载"));
+    reject(new Error(t("推导引擎还在后台加载")));
     return;
   }
   const id = ++nextRequest;
   pending.set(id, { resolve, reject });
   try {
-    worker.postMessage({ type: "dispatch", id, payload });
+    worker.postMessage({ type: "dispatch", id, payload: request });
   } catch (err) {
     pending.delete(id);
     reject(err);
@@ -173,7 +176,7 @@ function failBoot(message) {
   pending.forEach((p) => p.reject(new Error(message)));
   pending.clear();
   setProgress(0);
-  setStatus("引擎加载失败：" + message, "error");
+  setStatus(t("引擎加载失败：") + message, "error");
   showRetry();
   notifyReady(message);
   if (bootResolve) { bootResolve(); bootResolve = null; }
@@ -190,16 +193,18 @@ function notifyReady(err) {
 function onWorkerMessage(event) {
   const msg = event.data || {};
   if (msg.type === "progress") {
-    if (msg.status) setStatus(msg.status);
+    if (msg.status) setStatus(t(msg.status));
     if (typeof msg.pct === "number") setProgress(msg.pct);
-    if (typeof window.BC.onProgress === "function") window.BC.onProgress(msg);
+    if (typeof window.BC.onProgress === "function") {
+      window.BC.onProgress(Object.assign({}, msg, { status: t(msg.status) }));
+    }
     return;
   }
   if (msg.type === "ready") {
     window.BC.ready = true;
     window.BC.error = null;
     setProgress(100);
-    setStatus("引擎已就绪 · SymPy 在后台运行，页面不卡顿", "ready");
+    setStatus(t("引擎已就绪 · SymPy 在后台运行，页面不卡顿"), "ready");
     primeEngineCache();   // 引擎已在本地跑起来，此刻补缓存不与首次下载抢带宽
     reportCacheStatus(true);
     const computeBtn = document.getElementById("compute");
@@ -209,7 +214,7 @@ function onWorkerMessage(event) {
     return;
   }
   if (msg.type === "error") {
-    failBoot(msg.error || "未知错误");
+    failBoot(msg.error || t("未知错误"));
     return;
   }
   if (msg.type === "dispatch") {
@@ -217,7 +222,7 @@ function onWorkerMessage(event) {
     if (!p) return;
     pending.delete(msg.id);
     if (msg.ok) p.resolve(msg.result);
-    else p.reject(new Error(msg.error || "计算失败"));
+    else p.reject(new Error(msg.error || t("计算失败")));
   }
 }
 
@@ -233,21 +238,21 @@ function bootInline() {
   return (async () => {
     let loader = null;
     let pyodide = null;
-    let lastError = "未知错误";
+    let lastError = t("未知错误");
     for (const base of PYODIDE_SOURCES) {
       if (!loader) {
-        setStatus("正在加载引擎脚本：" + (base.indexOf("http") === 0 ? new URL(base).host : "本站"));
+        setStatus(t("正在加载引擎脚本：") + (base.indexOf("http") === 0 ? new URL(base).host : t("本站")));
         if (!(await loadPyodideScript(base + "pyodide.js")) || typeof window.loadPyodide !== "function") {
-          lastError = "无法加载 " + base + "pyodide.js";
+          lastError = t("无法加载 ") + base + "pyodide.js";
           continue;
         }
         loader = window.loadPyodide;
       }
       try {
-        setStatus("正在编译 Python 运行时（首次较慢）…");
+        setStatus(t("正在编译 Python 运行时（首次较慢）…"));
         setProgress(30);
         pyodide = await withTimeout(loader({ indexURL: base }), LOAD_TIMEOUT_MS, base);
-        setStatus("正在加载 SymPy…");
+        setStatus(t("正在加载 SymPy…"));
         setProgress(62);
         await withTimeout(pyodide.loadPackage("sympy"), LOAD_TIMEOUT_MS, "sympy");
         setProgress(80);
@@ -279,18 +284,22 @@ function bootInline() {
         "    return json.dumps(engine.dispatch(json.loads(req_json)), ensure_ascii=False)",
         '"ok"',
       ].join("\n"));
-      window.BC.dispatch = (payload) => JSON.parse(pyodide.runPython(dispatchPy(payload)));
+      const dispatchInline = (payload) => {
+        const lang = window.BC_I18N ? window.BC_I18N.getLang() : "zh";
+        return JSON.parse(pyodide.runPython(dispatchPy(Object.assign({}, payload, { lang: lang }))));
+      };
+      window.BC.dispatch = dispatchInline;
       window.BC.pyodide = pyodide;
       window.BC.ready = true;
       setProgress(100);
-      setStatus("引擎已就绪 · SymPy 在本地运行", "ready");
+      setStatus(t("引擎已就绪 · SymPy 在本地运行"), "ready");
       reportCacheStatus(true);
       const computeBtn = document.getElementById("compute");
       if (computeBtn) computeBtn.disabled = false;
       notifyReady();
     } catch (err) {
       window.BC.error = String(err);
-      setStatus("引擎初始化失败：" + String(err), "error");
+      setStatus(t("引擎初始化失败：") + String(err), "error");
       showRetry();
       notifyReady(String(err));
     }
@@ -312,13 +321,13 @@ function boot() {
       worker.onmessage = onWorkerMessage;
       worker.onerror = (e) => {
         if (e && typeof e.preventDefault === "function") e.preventDefault();
-        const err = (e && e.message) || "后台引擎启动失败";
+        const err = (e && e.message) || t("后台引擎启动失败");
         if (worker) { worker.terminate(); worker = null; }
         if (bootResolve) { bootResolve(); bootResolve = null; }
-        setStatus("后台引擎不可用，正在退回主线程…");
+        setStatus(t("后台引擎不可用，正在退回主线程…"));
         bootPromise = bootInline();
       };
-      setStatus("正在后台启动计算引擎（页面可继续使用）…");
+      setStatus(t("正在后台启动计算引擎（页面可继续使用）…"));
       worker.postMessage({
         type: "boot",
         coreFiles: window.BC_CORE_FILES || {},

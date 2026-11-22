@@ -5,6 +5,8 @@
 (function (global) {
   "use strict";
 
+  const t = (s) => (global.BC_I18N ? global.BC_I18N.t(s) : s);
+
   const FUNCS = {
     sin: 1, cos: 1, tan: 1, asin: 1, acos: 1, atan: 1,
     sinh: 1, cosh: 1, tanh: 1, ln: 1, log: 1, sqrt: 1,
@@ -26,7 +28,7 @@
         let j = i, dots = 0;
         while (j < s.length && (/[0-9]/.test(s[j]) || (s[j] === "." && dots++ === 0))) j++;
         if (j === i) { i++; continue; }
-        if (s[j] === ".") throw new Error("小数点重复：" + s.slice(i, j + 1));
+        if (s[j] === ".") throw new Error(t("小数点重复：") + s.slice(i, j + 1));
         if (j < s.length && (s[j] === "e" || s[j] === "E")) {
           let k = j + 1;
           if (s[k] === "+" || s[k] === "-") k++;
@@ -59,7 +61,7 @@
       if (s.slice(i, i + 2) === "**") { out.push({ type: "op", v: "^" }); i += 2; continue; }
       const ch = ops[c];
       if (ch) { out.push({ type: "op", v: ch }); i++; continue; }
-      throw new Error("无法识别的符号：" + c);
+      throw new Error(t("无法识别的符号：") + c);
     }
 
     // 隐式乘法：2x / 3(4+5) / (x+1)(x-1) / 2pi。函数名后面不插入。
@@ -89,7 +91,7 @@
       if (peek() && peek().type === "op" && peek().v === ")") { take(); return args; }
       args.push(expr());
       while (peek() && peek().type === "op" && peek().v === ",") { take(); args.push(expr()); }
-      if (!peek() || peek().v !== ")") throw new Error("缺少右括号 )");
+      if (!peek() || peek().v !== ")") throw new Error(t("缺少右括号 )"));
       take();
       return args;
     }
@@ -112,7 +114,7 @@
 
     function nud() {
       const t = take();
-      if (!t || t.type === "eof") throw new Error("表达式不完整");
+      if (!t || t.type === "eof") throw new Error(t("表达式不完整"));
       if (t.type === "num") return { t: "num", v: t.v };
       if (t.type === "id") {
         const name = t.v;
@@ -125,13 +127,13 @@
       if (t.type === "op") {
         if (t.v === "d/dx" || t.v === "∫") {
           if (!peek() || peek().v !== "(") {
-            throw new Error(t.v === "d/dx" ? "用法：d/dx(函数, x的值)" : "用法：∫(函数, 下限, 上限)");
+            throw new Error(t.v === "d/dx" ? t("用法：d/dx(函数, x的值)") : t("用法：∫(函数, 下限, 上限)"));
           }
           take();
           const args = argsUntilClose();
           const need = t.v === "d/dx" ? 2 : 3;
           if (args.length !== need) {
-            throw new Error(t.v === "d/dx" ? "d/dx 需要 2 个参数：d/dx(f, a)" : "∫ 需要 3 个参数：∫(f, a, b)");
+            throw new Error(t.v === "d/dx" ? t("d/dx 需要 2 个参数：d/dx(f, a)") : t("∫ 需要 3 个参数：∫(f, a, b)"));
           }
           return t.v === "d/dx"
             ? { t: "deriv", fn: args[0], a: args[1] }
@@ -139,7 +141,7 @@
         }
         if (t.v === "(") {
           const inner = expr();
-          if (!peek() || peek().v !== ")") throw new Error("缺少右括号 )");
+          if (!peek() || peek().v !== ")") throw new Error(t("缺少右括号 )"));
           take();
           return inner;
         }
@@ -148,18 +150,18 @@
           return t.v === "-" ? { t: "un", op: "-", v } : v;
         }
       }
-      throw new Error("无法解析：" + (t.v || "?"));
+      throw new Error(t("无法解析：") + (t.v || "?"));
     }
 
     const ast = expr();
-    if (peek() && peek().type !== "eof") throw new Error("多余的符号：" + (peek().v || ""));
+    if (peek() && peek().type !== "eof") throw new Error(t("多余的符号：") + (peek().v || ""));
     return ast;
   }
 
   function numericDerivative(f, x) {
     const h = 1e-5 * Math.max(1, Math.abs(x));
     const v = (-f(x + 2 * h) + 8 * f(x + h) - 8 * f(x - h) + f(x - 2 * h)) / (12 * h);
-    if (!isFinite(v)) throw new Error("该点导数不存在");
+    if (!isFinite(v)) throw new Error(t("该点导数不存在"));
     return v;
   }
 
@@ -167,20 +169,20 @@
     if (a === b) return 0;
     let guard = 0;
     const fa = f(a), fb = f(b), c = (a + b) / 2, fc = f(c);
-    if (![fa, fb, fc].every(isFinite)) throw new Error("积分区间内函数无定义");
+    if (![fa, fb, fc].every(isFinite)) throw new Error(t("积分区间内函数无定义"));
     const whole = (b - a) / 6 * (fa + 4 * fc + fb);
     function rec(a, b, fa, fb, fc, prev, eps) {
       if (++guard > 20000) return prev;
       const c = (a + b) / 2, d = (a + c) / 2, e = (c + b) / 2;
       const fd = f(d), fe = f(e);
-      if (!isFinite(fd) || !isFinite(fe)) throw new Error("积分区间内函数无定义");
+      if (!isFinite(fd) || !isFinite(fe)) throw new Error(t("积分区间内函数无定义"));
       const left = (c - a) / 6 * (fa + 4 * fd + fc);
       const right = (b - c) / 6 * (fc + 4 * fe + fb);
       if (Math.abs(left + right - prev) <= 15 * eps) return left + right + (left + right - prev) / 15;
       return rec(a, c, fa, fc, fd, left, eps / 2) + rec(c, b, fc, fb, fe, right, eps / 2);
     }
     const result = rec(a, b, fa, fb, fc, whole, 1e-9);
-    if (!isFinite(result)) throw new Error("积分结果不是有限数");
+    if (!isFinite(result)) throw new Error(t("积分结果不是有限数"));
     return result;
   }
 
@@ -189,22 +191,22 @@
       case "num": return n.v;
       case "var": {
         if (n.v === "x") {
-          if (env.x === undefined || env.x === null) throw new Error("这里需要给 x 赋值");
+          if (env.x === undefined || env.x === null) throw new Error(t("这里需要给 x 赋值"));
           return env.x;
         }
         if (n.v === "pi") return Math.PI;
         if (n.v === "e") return Math.E;
         if (n.v === "ans") {
-          if (env.ans === undefined) throw new Error("还没有 Ans 值");
+          if (env.ans === undefined) throw new Error(t("还没有 Ans 值"));
           return env.ans;
         }
-        throw new Error("未知变量：" + n.v);
+        throw new Error(t("未知变量：") + n.v);
       }
       case "un": {
         const v = evalAst(n.v, env);
         if (n.op === "-") return -v;
         const k = Math.round(v);
-        if (k !== v || k < 0 || k > 170) throw new Error("阶乘只支持 0 到 170 的整数");
+        if (k !== v || k < 0 || k > 170) throw new Error(t("阶乘只支持 0 到 170 的整数"));
         let out = 1;
         for (let i = 2; i <= k; i++) out *= i;
         return out;
@@ -215,14 +217,14 @@
           case "+": return l + r;
           case "-": return l - r;
           case "*": return l * r;
-          case "/": if (r === 0) throw new Error("不能除以 0"); return l / r;
+          case "/": if (r === 0) throw new Error(t("不能除以 0")); return l / r;
           case "^": {
             const v = Math.pow(l, r);
-            if (!isFinite(v) && isFinite(l) && isFinite(r)) throw new Error("幂运算超出范围");
+            if (!isFinite(v) && isFinite(l) && isFinite(r)) throw new Error(t("幂运算超出范围"));
             return v;
           }
         }
-        throw new Error("未知运算：" + n.op);
+        throw new Error(t("未知运算：") + n.op);
       }
       case "call": {
         const v = evalAst(n.args[0], env);
@@ -240,22 +242,22 @@
             return Math.tan(rad);
           }
           case "asin":
-            if (v < -1 || v > 1) throw new Error("反正弦的参数必须在 -1 到 1 之间");
+            if (v < -1 || v > 1) throw new Error(t("反正弦的参数必须在 -1 到 1 之间"));
             return back(Math.asin(v));
           case "acos":
-            if (v < -1 || v > 1) throw new Error("反余弦的参数必须在 -1 到 1 之间");
+            if (v < -1 || v > 1) throw new Error(t("反余弦的参数必须在 -1 到 1 之间"));
             return back(Math.acos(v));
           case "atan": return back(Math.atan(v));
           case "sinh": return Math.sinh(v);
           case "cosh": return Math.cosh(v);
           case "tanh": return Math.tanh(v);
           case "ln":
-            if (v <= 0) throw new Error("对数的参数必须为正数");
+            if (v <= 0) throw new Error(t("对数的参数必须为正数"));
             return Math.log(v);
           case "log":
-            if (v <= 0) throw new Error("对数的参数必须为正数");
+            if (v <= 0) throw new Error(t("对数的参数必须为正数"));
             return Math.log10(v);
-          case "sqrt": if (v < 0) throw new Error("平方根的参数不能为负"); return Math.sqrt(v);
+          case "sqrt": if (v < 0) throw new Error(t("平方根的参数不能为负")); return Math.sqrt(v);
           case "abs": return Math.abs(v);
           case "exp": return Math.exp(v);
           case "floor": return Math.floor(v);
@@ -263,7 +265,7 @@
           case "round": return Math.round(v);
           case "sign": return Math.sign(v);
         }
-        throw new Error("未知函数：" + n.name);
+        throw new Error(t("未知函数：") + n.name);
       }
       case "deriv": {
         const x0 = evalAst(n.a, { deg: env.deg, ans: env.ans });
@@ -275,7 +277,7 @@
         return integrate((x) => evalAst(n.fn, { x, deg: env.deg, ans: env.ans }), a, b);
       }
     }
-    throw new Error("无法计算的表达式");
+    throw new Error(t("无法计算的表达式"));
   }
 
   function toFraction(x, maxDen) {
@@ -318,7 +320,7 @@
     try {
       const ast = parse(tokenize(src));
       const value = evalAst(ast, { x: opts.x, deg: !!opts.deg, ans: opts.ans });
-      if (typeof value !== "number" || !isFinite(value)) throw new Error("结果不是有限数");
+      if (typeof value !== "number" || !isFinite(value)) throw new Error(t("结果不是有限数"));
       return { ok: true, value: value, text: format(value, !!opts.frac), ast: ast };
     } catch (err) {
       return { ok: false, error: err && err.message ? err.message : String(err) };

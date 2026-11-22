@@ -263,74 +263,77 @@ footer { border-top:1px solid var(--border); padding:14px 24px; font-size:12px; 
 <header>
   <div>
     <h1>BC Helper</h1>
-    <p>微积分 BC 分步计算器 · 求导 (derivative) / 积分 (integral)</p>
+    <p data-i18n>微积分 BC 分步计算器 · 求导 (derivative) / 积分 (integral)</p>
   </div>
-  <button id="themeToggle" type="button">切换主题</button>
+  <div style="display:flex;gap:8px;flex:0 0 auto">
+    <button id="langToggle" type="button" style="background:transparent;color:var(--text);border:1px solid var(--border);border-radius:9px;padding:6px 12px;cursor:pointer;font-size:13px">EN</button>
+    <button id="themeToggle" type="button" data-i18n>切换主题</button>
+  </div>
 </header>
 <main>
   <div class="view-tabs" role="tablist">
-    <button class="view-tab active" type="button" data-view="study">分步计算<small>Step-by-step</small></button>
-    <button class="view-tab" type="button" data-view="exam">考场模式<small>991 计算器 + Desmos</small></button>
-    <button class="view-tab" type="button" data-view="notes">小讲义<small>Notes</small></button>
+    <button class="view-tab active" type="button" data-view="study"><span data-i18n>分步计算</span><small>Step-by-step</small></button>
+    <button class="view-tab" type="button" data-view="exam"><span data-i18n>考场模式</span><small data-i18n>991 计算器 + Desmos</small></button>
+    <button class="view-tab" type="button" data-view="notes"><span data-i18n>小讲义</span><small>Notes</small></button>
   </div>
 
   <div id="viewStudy">
   <div id="engineBox" class="engine-box">
-    <div id="engineStatus">推导引擎按需启动 · 点「计算」时才加载（首次约 1 分钟，讲义和考场模式立即能用）</div>
+    <div id="engineStatus" data-i18n>推导引擎按需启动 · 点「计算」时才加载（首次约 1 分钟，讲义和考场模式立即能用）</div>
     <div id="cacheStatus" class="cache-status"></div>
     <div class="track"><div id="engineBar"></div></div>
   </div>
 
   <div class="mode-tabs" role="tablist">
-    <button class="mode-tab active" type="button" data-mode="derivative">求导<small>Derivative</small></button>
-    <button class="mode-tab" type="button" data-mode="integral">积分<small>Integral</small></button>
+    <button class="mode-tab active" type="button" data-mode="derivative"><span data-i18n>求导</span><small>Derivative</small></button>
+    <button class="mode-tab" type="button" data-mode="integral"><span data-i18n>积分</span><small>Integral</small></button>
   </div>
 
   <div class="workspace">
     <section class="card" id="inputPanel">
-      <h2>输入</h2>
+      <h2 data-i18n>输入</h2>
       <label>f(x) =
         <input id="expr" type="text" value="x^2*sin(x)+e^(2x)" spellcheck="false" autocomplete="off">
       </label>
-      <div class="expr-preview-label">标准排版预览 · Preview</div>
+      <div class="expr-preview-label" data-i18n>标准排版预览 · Preview</div>
       <div id="exprPreview" class="expr-preview" aria-live="polite"></div>
 
       <div id="derivativeControls">
         <div class="row">
-          <label>阶数 (order)
+          <label><span data-i18n>阶数 (order)</span>
             <select id="order">
               <option value="1" selected>1</option><option value="2">2</option>
               <option value="3">3</option><option value="4">4</option>
               <option value="5">5</option>
             </select>
           </label>
-          <label>在 x = a 处求值（可留空）
-            <input id="at" type="text" placeholder="例如 1 或 pi/2" spellcheck="false">
+          <label><span data-i18n>在 x = a 处求值（可留空）</span>
+            <input id="at" type="text" placeholder="例如 1 或 pi/2" data-i18n-placeholder="例如 1 或 pi/2" spellcheck="false">
           </label>
         </div>
       </div>
 
       <div id="integralControls" hidden>
         <div class="row">
-          <label>类型 (type)
+          <label><span data-i18n>类型 (type)</span>
             <select id="kind">
-              <option value="indefinite" selected>不定积分 (indefinite)</option>
-              <option value="definite">定积分 (definite)</option>
+              <option value="indefinite" selected data-i18n>不定积分 (indefinite)</option>
+              <option value="definite" data-i18n>定积分 (definite)</option>
             </select>
           </label>
-          <label>方法偏好 (method)
+          <label><span data-i18n>方法偏好 (method)</span>
             <select id="method">
-              <option value="auto" selected>自动 (auto)</option>
-              <option value="substitution">换元 (u-substitution)</option>
-              <option value="parts">分部 (integration by parts)</option>
+              <option value="auto" selected data-i18n>自动 (auto)</option>
+              <option value="substitution" data-i18n>换元 (u-substitution)</option>
+              <option value="parts" data-i18n>分部 (integration by parts)</option>
             </select>
           </label>
         </div>
         <div class="row" id="boundsRow" hidden>
-          <label>下限 a
+          <label><span data-i18n>下限 a</span>
             <input id="lower" type="text" value="0" spellcheck="false">
           </label>
-          <label>上限 b
+          <label><span data-i18n>上限 b</span>
             <input id="upper" type="text" value="2" spellcheck="false">
           </label>
         </div>
@@ -338,27 +341,27 @@ footer { border-top:1px solid var(--border); padding:14px 24px; font-size:12px; 
 
       <label style="display:flex;align-items:center;gap:8px;margin-top:14px;">
         <input id="showSteps" type="checkbox" checked style="width:auto;margin:0;">
-        显示分步推导 (show steps)
+        <span data-i18n>显示分步推导 (show steps)</span>
       </label>
 
-      <p class="hint">支持 x、^、sin/cos/tan、e^x、ln(x)、sqrt(x)、pi；也接受 2x、sin x 这类省略写法。</p>
+      <p class="hint" data-i18n>支持 x、^、sin/cos/tan、e^x、ln(x)、sqrt(x)、pi；也接受 2x、sin x 这类省略写法。</p>
 
       <div class="examples">
-        <div class="examples-title">一键示例 (worked examples)</div>
+        <div class="examples-title" data-i18n>一键示例 (worked examples)</div>
         <div class="chips" id="examples"></div>
       </div>
 
-      <button id="compute" class="primary" type="button">计算</button>
+      <button id="compute" class="primary" type="button" data-i18n>计算</button>
     </section>
 
     <section class="card" id="resultPanel">
-      <h2>结果</h2>
-      <div id="answerBox" class="answer placeholder">还没计算。填好左边，点「计算」。</div>
+      <h2 data-i18n>结果</h2>
+      <div id="answerBox" class="answer placeholder" data-i18n>还没计算。填好左边，点「计算」。</div>
       <div id="secondaryBox" class="secondary" hidden></div>
       <div id="stepsBox"></div>
       <div class="result-actions">
-        <button id="printPdf" class="ghost" type="button">导出 PDF</button>
-        <span>关键概念保留英文原名，方便对照课本。</span>
+        <button id="printPdf" class="ghost" type="button" data-i18n>导出 PDF</button>
+        <span data-i18n>关键概念保留英文原名，方便对照课本。</span>
       </div>
     </section>
   </div><!-- /workspace -->
@@ -367,10 +370,10 @@ footer { border-top:1px solid var(--border); padding:14px 24px; font-size:12px; 
   <div id="viewExam" hidden>
     <div class="exam-grid">
       <section class="card" id="calcPanel">
-        <h2>卡西欧风格计算器 <small style="font-size:12px;color:var(--muted);font-weight:400">fx-991CN 风格</small></h2>
+        <h2><span data-i18n>卡西欧风格计算器</span> <small style="font-size:12px;color:var(--muted);font-weight:400" data-i18n>fx-991CN 风格</small></h2>
         <div class="calc-body">
           <div class="calc-screen">
-            <div class="strip"><span><b id="angleInd">DEG</b> / RAD</span><span>分数/小数 <b id="fmtInd">F</b></span><span>ANS <b id="ansInd">0</b></span></div>
+            <div class="strip"><span><b id="angleInd">DEG</b> / RAD</span><span><span data-i18n>分数/小数</span> <b id="fmtInd">F</b></span><span>ANS <b id="ansInd">0</b></span></div>
             <div class="expr" id="calcExpr">0</div>
             <div class="result" id="calcResult">0</div>
           </div>
@@ -425,26 +428,26 @@ footer { border-top:1px solid var(--border); padding:14px 24px; font-size:12px; 
           </div>
         </div>
         <p class="calc-tip">
-          点按键或直接敲键盘输入。<code>d/dx(函数, x的值)</code>、<code>∫(函数, 下限, 上限)</code>。<br>
-          <b>DRG</b> 切角度/弧度，<b>d/c</b> 切分数/小数。切换时会自动按新模式重算当前表达式（Ans 同步更新），图像右上角的角度徽标也会一起变，避免计算器和 Desmos 单位不一致。
+          <span data-i18n>点按键或直接敲键盘输入。</span><code data-i18n>d/dx(函数, x的值)</code>、<code data-i18n>∫(函数, 下限, 上限)</code>。<br>
+          <b>DRG</b> <span data-i18n>切角度/弧度，</span><b>d/c</b> <span data-i18n>切分数/小数。切换时会自动按新模式重算当前表达式（Ans 同步更新），图像右上角的角度徽标也会一起变，避免计算器和 Desmos 单位不一致。</span>
         </p>
       </section>
 
       <section class="card graph-card" id="graphPanel">
-        <h2>函数图像 (Desmos) <button id="themeToggleExam" class="ghost" type="button" style="font-size:12px;padding:4px 10px">切主题</button></h2>
+        <h2><span data-i18n>函数图像 (Desmos)</span> <button id="themeToggleExam" class="ghost" type="button" style="font-size:12px;padding:4px 10px" data-i18n>切主题</button></h2>
         <div class="graph-tools">
-          <button id="plotNow" class="ghost" type="button">画当前表达式</button>
-          <button id="graphClear" class="ghost" type="button">清空</button>
+          <button id="plotNow" class="ghost" type="button" data-i18n>画当前表达式</button>
+          <button id="graphClear" class="ghost" type="button" data-i18n>清空</button>
           <span id="graphAngle" class="graph-unit">DEG</span>
-          <span id="graphStatus" class="graph-status">进入考场模式后自动连接…</span>
+          <span id="graphStatus" class="graph-status" data-i18n>进入考场模式后自动连接…</span>
         </div>
         <div id="desmosWrap" class="graph-box" hidden><div id="desmos" style="width:100%;height:100%"></div></div>
         <div id="canvasWrap" class="graph-box">
           <canvas id="plotCanvas"></canvas>
           <div class="plot-controls">
-            <button id="plotOut" type="button" title="缩小">−</button>
-            <button id="plotIn" type="button" title="放大">+</button>
-            <button id="plotReset" type="button" title="复位">⌂</button>
+            <button id="plotOut" type="button" data-i18n-title="缩小" title="缩小">−</button>
+            <button id="plotIn" type="button" data-i18n-title="放大" title="放大">+</button>
+            <button id="plotReset" type="button" data-i18n-title="复位" title="复位">⌂</button>
           </div>
         </div>
       </section>
@@ -453,7 +456,7 @@ footer { border-top:1px solid var(--border); padding:14px 24px; font-size:12px; 
   <div id="viewNotes" hidden>
     <div class="notes-layout">
       <aside class="notes-side">
-        <h3>目录 · Contents</h3>
+        <h3 data-i18n>目录 · Contents</h3>
         <div id="notesNav"></div>
       </aside>
       <article id="notesArticle" class="card note-article"></article>
@@ -462,8 +465,9 @@ footer { border-top:1px solid var(--border); padding:14px 24px; font-size:12px; 
 </main>
 <!-- 页脚使用人数（免费第三方计数器，拿不到数字时整行保持隐藏；逻辑在 app.js 末尾） -->
 <p id="usageRow" class="usage-line" hidden></p>
-<footer>BC Helper · 本地计算，不上传任何表达式 · 引擎由 SymPy 驱动 · 首次访问后引擎缓存到浏览器，可离线使用</footer>
+<footer data-i18n>BC Helper · 本地计算，不上传任何表达式 · 引擎由 SymPy 驱动 · 首次访问后引擎缓存到浏览器，可离线使用</footer>
 
+<script src="i18n.js"></script>
 <script src="core_bundle.js"></script>
 <script src="bridge.js"></script>
 <script src="calc-engine.js"></script>
