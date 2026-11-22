@@ -191,6 +191,20 @@ def test_series_english_and_bad_start():
     assert not dispatch({"op": "series", "expr": "1/n", "start": "bad"})["ok"]
 
 
+def test_step_notes_mark_math_for_katex():
+    """说明文案里的表达式用 $...$ 标出来，前端才能交给 KaTeX 排版。"""
+    payload = {
+        "op": "integral", "expr": "x^2*sqrt(x^3+1)",
+        "kind": "indefinite", "method": "substitution",
+    }
+    for lang in ("zh", "en"):
+        result = dispatch({**payload, "lang": lang})
+        note = next(s["note"] for s in result["steps"] if s["rule"] == "substitution")
+        assert note.count("$") >= 4 and note.count("$") % 2 == 0, note
+        assert "x^3 + 1" in note, note
+        assert "$u = " in note and "$du = " in note, note
+
+
 def test_default_language_is_chinese():
     result = dispatch({"op": "derivative", "expr": "x^2*sin(x)", "order": 1})
     titles = " ".join(step["title"] for step in result["steps"])
