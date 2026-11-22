@@ -25,6 +25,7 @@ const required = [
   "removable-discontinuity", "infinite-limits", "limits-at-infinity", "intermediate-value-theorem",
   "chain-layers", "implicit-rates", "related-rates", "log-diff", "inverse-deriv", "param-polar-deriv",
   "u-sub", "parts", "trig-int", "partial-frac", "var-bounds", "bounds-direct",
+  "accumulation", "riemann", "intprops", "longdivision",
   "area-volume", "improper", "param-polar", "diffeq", "average-accum",
 ];
 required.forEach((id) => assert.ok(notes.find(id), "缺少考点：" + id));
@@ -74,10 +75,8 @@ assert.equal((u1Roadmap.match(/roadmap-item done/g) || []).length, 16, "Unit 1 �
 assert.equal((u1Roadmap.match(/roadmap-item todo/g) || []).length, 0, "Unit 1 不应还有待补主题");
 assert.ok(u1Roadmap.includes('data-jump="squeeze"'), "Unit 1 总览缺少跳转到夹逼定理的按钮");
 const u6Roadmap = notes.blocksHtml(notes.find("u6-overview").blocks);
-const u6Done = (u6Roadmap.match(/roadmap-item done/g) || []).length;
-const u6Todo = (u6Roadmap.match(/roadmap-item todo/g) || []).length;
-assert.equal(u6Done + u6Todo, 14, "Unit 6 主题总数应为 14");
-assert.ok(u6Done >= 10, "Unit 6 已覆盖主题不应减少");
+assert.equal((u6Roadmap.match(/roadmap-item done/g) || []).length, 14, "Unit 6 应已全覆盖");
+assert.equal((u6Roadmap.match(/roadmap-item todo/g) || []).length, 0, "Unit 6 不应还有待补主题");
 assert.ok(u6Roadmap.includes('data-jump="u-sub"'), "总览缺少跳转到已覆盖讲义的按钮");
 
 // 本轮补的重点单元：Unit 10 全部覆盖，Unit 5 只剩 1 个主题待补
@@ -86,7 +85,7 @@ assert.equal(roadmapDone("u10"), 15, "Unit 10 应已全覆盖");
 assert.equal(roadmapDone("u5"), 11, "Unit 5 覆盖数量不符");
 assert.equal(roadmapDone("u4"), 6, "Unit 4 覆盖数量不符");
 assert.equal(roadmapDone("u7"), 6, "Unit 7 覆盖数量不符");
-assert.ok(articles.length >= 62, "讲义篇数不足");
+assert.ok(articles.length >= 66, "讲义篇数不足");
 
 formulas.forEach((tex) => {
   assert.doesNotThrow(
