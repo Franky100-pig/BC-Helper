@@ -114,6 +114,41 @@ def test_english_steps_and_errors():
     assert error["error"]["message"] == "Derivative order must be an integer from 1 to 5"
 
 
+def test_limit_convergence_verdicts():
+    finite = dispatch({"op": "limit", "expr": "sin(x)/x", "at": "0"})
+    assert finite["ok"]
+    assert finite["answer"]["text"].strip() == "1"
+    assert finite["meta"]["verdict"] == "converges"
+    assert any("洛必达" in s["title"] for s in finite["steps"])
+
+    at_infinity = dispatch({"op": "limit", "expr": "1/x", "at": "oo"})
+    assert at_infinity["ok"] and at_infinity["answer"]["text"].strip() == "0"
+
+    unbounded = dispatch({"op": "limit", "expr": "x^2", "at": "oo"})
+    assert unbounded["meta"]["verdict"] == "diverges_inf"
+    assert "发散" in unbounded["answer"]["text"]
+
+    oscillating = dispatch({"op": "limit", "expr": "sin(x)", "at": "oo"})
+    assert oscillating["meta"]["verdict"] == "dne"
+    assert "DNE" in oscillating["steps"][-2]["after"]["latex"]
+
+    one_sided = dispatch({"op": "limit", "expr": "1/(x-1)", "at": "1", "side": "left"})
+    assert one_sided["meta"]["verdict"] == "diverges_inf"
+    assert "1^{-}" in one_sided["steps"][0]["before"]["latex"]
+
+
+def test_limit_english_and_bad_point():
+    result = dispatch({
+        "op": "limit", "expr": "ln(x)/x", "at": "oo", "lang": "en",
+    })
+    assert result["ok"]
+    titles = " ".join(s["title"] for s in result["steps"])
+    assert "L'Hôpital's rule" in titles and "Convergence verdict" in titles
+    notes = " ".join(s["note"] for s in result["steps"])
+    assert not any("\u4e00" <= ch <= "\u9fff" for ch in titles + notes)
+    assert not dispatch({"op": "limit", "expr": "x", "at": "not-a-point"})["ok"]
+
+
 def test_default_language_is_chinese():
     result = dispatch({"op": "derivative", "expr": "x^2*sin(x)", "order": 1})
     titles = " ".join(step["title"] for step in result["steps"])

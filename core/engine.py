@@ -6,6 +6,7 @@ from expr import X, constant, parse
 from format import fmt, step
 from i18n import FORMULAS, err, label, note
 from integral import integral_steps_for
+from limits import limit_point, limit_result
 
 VERSION = "0.1.0"
 
@@ -124,6 +125,28 @@ def _integral(payload, expr, lang):
     }
 
 
+def _limit(payload, expr, lang):
+    point = limit_point(payload.get("at", ""), lang)
+    side = payload.get("side", "both")
+    if side not in ("both", "left", "right"):
+        raise ValueError(err("bad_point", lang))
+    answer, secondary, steps, verdict = limit_result(expr, point, side, lang)
+    return {
+        "ok": True,
+        "version": VERSION,
+        "op": "limit",
+        "answer": answer,
+        "secondary": secondary,
+        "steps": steps,
+        "meta": {
+            "input": fmt(expr),
+            "point": str(point).replace("**", "^"),
+            "side": side,
+            "verdict": verdict,
+        },
+    }
+
+
 def dispatch(payload):
     """payload 是 dict；返回可 JSON 序列化的结果。lang: zh（默认）/ en。"""
     lang = _lang(payload)
@@ -131,11 +154,13 @@ def dispatch(payload):
         if not isinstance(payload, dict):
             raise ValueError(err("bad_payload", lang))
         op = payload.get("op")
-        if op not in ("derivative", "integral"):
+        if op not in ("derivative", "integral", "limit"):
             raise ValueError(err("bad_op", lang))
         expr = parse(payload.get("expr", ""), lang=lang)
         if op == "derivative":
             return _derivative(payload, expr, lang)
+        if op == "limit":
+            return _limit(payload, expr, lang)
         return _integral(payload, expr, lang)
     except Exception as exc:  # noqa: BLE001 —— 所有错误都变成结构化提示
         return _error(str(exc))
