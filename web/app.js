@@ -644,10 +644,11 @@ const notesMathTimer = setInterval(() => {
 (function initUsageCounter() {
   const row = document.getElementById("usageRow");
   if (!row) return;
+  const ct = (s) => (window.BC_I18N ? window.BC_I18N.t(s) : s);
   const NS = "bc-helper-franky100";
   const KEY = "visitors";
   const API = "https://abacus.jasoncameron.dev";
-  const MARK = t("{n} 人用 BC Helper 学微积分");
+  const MARK = "{n} 人用 BC Helper 学微积分";
   let count = null;
 
   function lsGet(k) { try { return localStorage.getItem(k); } catch (_) { return null; } }
@@ -659,7 +660,7 @@ const notesMathTimer = setInterval(() => {
   // 用文本节点拼，数字加粗夹在前后文字之间，天然防注入。
   function render() {
     if (count == null) return;
-    const parts = t(MARK).split("{n}");
+    const parts = ct(MARK).split("{n}");
     row.textContent = "";
     row.appendChild(document.createTextNode(parts[0] || ""));
     const b = document.createElement("b");

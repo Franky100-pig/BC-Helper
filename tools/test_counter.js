@@ -36,7 +36,7 @@ function makeRow() {
   return row;
 }
 
-function run({ counted, storeOK, value, fail = false, ok = true }) {
+function run({ counted, storeOK, value, fail = false, ok = true, en = false }) {
   const store = {};
   if (counted) store["bc-counted"] = "1";
   const localStorage = {
@@ -63,6 +63,10 @@ function run({ counted, storeOK, value, fail = false, ok = true }) {
 
   const sandbox = { window: {}, localStorage, document, fetch, console };
   sandbox.window = sandbox;
+  if (en) {
+    sandbox.BC_I18N = { t: (s) => (s === "{n} 人用 BC Helper 学微积分"
+      ? "{n} people learning calculus with BC Helper" : s) };
+  }
   vm.createContext(sandbox);
   vm.runInContext(counterSrc, sandbox);
   return new Promise((res) => setTimeout(() => res({ row, calledUrl, store }), 30));
@@ -105,6 +109,10 @@ function run({ counted, storeOK, value, fail = false, ok = true }) {
   check("!res.ok -> 隐藏", r.row.hidden === true);
   r = await run({ counted: true, storeOK: true, value: "oops" });
   check("非数字 -> 隐藏", r.row.hidden === true);
+
+  console.log("[英文模式] 期望英文文案");
+  r = await run({ counted: true, storeOK: true, value: 7, en: true });
+  check("英文文案", r.row.textContent === "7 people learning calculus with BC Helper", JSON.stringify(r.row.textContent));
 
   console.log("\n" + pass + " passed, " + fail + " failed");
   process.exit(fail ? 1 : 0);
