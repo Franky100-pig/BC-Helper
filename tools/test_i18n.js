@@ -34,6 +34,18 @@ for (const [zh, en] of Object.entries(I.dict)) {
   checks++;
 }
 
+// 步骤说明里的 $...$ 必须交给 KaTeX，普通文字仍按 HTML 转义。
+sandbox.window.katex = {
+  renderToString: (tex) => "<math>" + tex + "</math>",
+};
+const noteHtml = I.mathText("令 $u = x^3 + 1$，则 $du = oo$；ρ < 1");
+assert.ok(noteHtml.includes("<math>u = x^3 + 1</math>"), "说明里的公式片段未走 KaTeX：" + noteHtml);
+assert.ok(noteHtml.includes("<math>du = \\infty</math>"), "oo 未转成 LaTeX 无穷：" + noteHtml);
+assert.ok(noteHtml.includes("ρ &lt; 1"), "普通文字未做 HTML 转义：" + noteHtml);
+assert.ok(read("app.js").includes("BC_I18N.mathText"), "步骤说明未接入数学排版");
+checks += 4;
+delete sandbox.window.katex;
+
 // 脚本里所有 t("中文...") 都必须有对应译文，避免英文模式下漏翻译。
 for (const name of ["app.js", "bridge.js", "calc-engine.js"]) {
   const src = read(name);

@@ -217,11 +217,14 @@ function renderSteps(steps) {
   if (!state.showSteps || !steps || !steps.length) { box.innerHTML = ""; return; }
   const html = steps.map((s) => {
     const indent = Math.min(s.depth || 0, 5) * 16;
-    const formula = s.formula ? `<div class="formula">${escapeHtml(s.formula)}</div>` : "";
-    const note = s.note ? `<div class="note">${escapeHtml(s.note)}</div>` : "";
+    // 通用法则公式（如 ∫f(g(x))g'(x)dx = ∫f(u)du）与 before→after 重复，
+    // 而且是纯文本，不再单独占一行；具体变形看下面的 flow。
+    const note = s.note
+      ? `<div class="note">${window.BC_I18N && window.BC_I18N.mathText
+          ? window.BC_I18N.mathText(s.note) : escapeHtml(s.note)}</div>`
+      : "";
     return `<div class="step" style="margin-left:${indent}px">
       <div class="rule">${escapeHtml(s.title)}</div>
-      ${formula}
       <div class="flow">${math(s.before)}<span class="arrow">→</span>${math(s.after)}</div>
       ${note}
     </div>`;

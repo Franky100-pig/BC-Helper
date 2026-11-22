@@ -236,9 +236,40 @@
   }
   function onChange(fn) { if (typeof fn === "function") listeners.push(fn); }
 
+  /* 说明文字里的 $...$ 片段用 KaTeX 排版。
+   * 引擎只负责标记数学片段，中文/英文句子本身仍走普通文本，避免整段被当公式。 */
+  function escapeHtml(value) {
+    return String(value == null ? "" : value)
+      .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+  }
+  var TEX_WORDS = {
+    sqrt: "\\sqrt", ln: "\\ln", log: "\\log", sin: "\\sin",
+    cos: "\\cos", tan: "\\tan", exp: "\\exp",
+    oo: "\\infty", pi: "\\pi",
+  };
+  function normalizeTex(tex) {
+    return String(tex).replace(/\b(sqrt|ln|log|sin|cos|tan|exp|oo|pi)\b/g,
+      function (word) { return TEX_WORDS[word]; });
+  }
+  function mathText(text) {
+    var parts = String(text == null ? "" : text).split("$");
+    return parts.map(function (part, i) {
+      if (i % 2 === 0) return escapeHtml(part);
+      if (!part) return "";
+      var tex = normalizeTex(part);
+      if (window.katex) {
+        try {
+          return window.katex.renderToString(tex, { throwOnError: false, displayMode: false });
+        } catch (e) {}
+      }
+      return escapeHtml(part);
+    }).join("");
+  }
+
   window.BC_I18N = {
     getLang: getLang, setLang: setLang, t: t, apply: apply, onChange: onChange,
-    dict: DICT,
+    mathText: mathText, dict: DICT,
   };
 
   if (typeof document !== "undefined") {
