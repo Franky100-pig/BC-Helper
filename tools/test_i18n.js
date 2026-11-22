@@ -37,7 +37,7 @@ for (const [zh, en] of Object.entries(I.dict)) {
 // 脚本里所有 t("中文...") 都必须有对应译文，避免英文模式下漏翻译。
 for (const name of ["app.js", "bridge.js", "calc-engine.js"]) {
   const src = read(name);
-  const re = /\bt\("([^"\n]*[\u4e00-\u9fff][^"\n]*)"\)/g;
+  const re = /\b(?:uiT|t)\("([^"\n]*[\u4e00-\u9fff][^"\n]*)"\)/g;
   let m;
   while ((m = re.exec(src))) {
     assert.ok(Object.prototype.hasOwnProperty.call(I.dict, m[1]),

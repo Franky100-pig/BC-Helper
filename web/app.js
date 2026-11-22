@@ -2,7 +2,7 @@
 
 const $ = (id) => document.getElementById(id);
 const STORE = "bc-state-v1";
-const t = (s) => (window.BC_I18N ? window.BC_I18N.t(s) : s);
+const uiT = (s) => (window.BC_I18N ? window.BC_I18N.t(s) : s);
 let lastPayload = null;
 
 const EXAMPLES = {
@@ -96,7 +96,7 @@ function renderExprPreview() {
   if (!box || !window.katex) return false;
   const raw = $("expr").value.trim();
   if (!raw) {
-    box.innerHTML = '<span class="expr-preview-empty">' + escapeHtml(t("输入表达式后显示标准数学排版")) + '</span>';
+    box.innerHTML = '<span class="expr-preview-empty">' + escapeHtml(uiT("输入表达式后显示标准数学排版")) + '</span>';
     return true;
   }
   const f = latexOf(raw);
@@ -131,7 +131,7 @@ function renderExamples() {
     const btn = document.createElement("button");
     btn.type = "button";
     btn.className = "chip";
-    btn.textContent = t(ex.label);
+    btn.textContent = uiT(ex.label);
     btn.onclick = () => applyExample(ex);
     box.appendChild(btn);
   });
@@ -189,7 +189,7 @@ function renderSteps(steps) {
       ${note}
     </div>`;
   }).join("");
-  box.innerHTML = `<div class="steps-title">${escapeHtml(t("解题步骤 (worked steps)"))}</div>${html}`;
+  box.innerHTML = `<div class="steps-title">${escapeHtml(uiT("解题步骤 (worked steps)"))}</div>${html}`;
 }
 
 function renderError(message) {
@@ -208,7 +208,7 @@ function renderResult(res) {
   const sec = $("secondaryBox");
   if (res.secondary) {
     sec.hidden = false;
-    sec.innerHTML = escapeHtml(t("原表达式 / 中间结果：")) + math(res.secondary);
+    sec.innerHTML = escapeHtml(uiT("原表达式 / 中间结果：")) + math(res.secondary);
   } else {
     sec.hidden = true;
     sec.innerHTML = "";
@@ -238,15 +238,15 @@ async function compute() {
     // ensureReady 在引擎就绪后 resolve，本次点击会排队等它，而不是被丢掉。
     if (!(window.BC && window.BC.ready)) {
       if (!window.BC || typeof window.BC.ensureReady !== "function") {
-        renderError(t("推导引擎脚本未加载，请刷新页面重试。"));
+        renderError(uiT("推导引擎脚本未加载，请刷新页面重试。"));
         return;
       }
-      $("answerBox").textContent = t("首次计算：正在后台启动推导引擎，启动后会自动算出结果…");
+      $("answerBox").textContent = uiT("首次计算：正在后台启动推导引擎，启动后会自动算出结果…");
       if (computeBtn) computeBtn.disabled = true;
       // 把引擎的分阶段进度实时显示出来，避免「干等 1 分钟」的错觉。
       const answer = $("answerBox");
       window.BC.onProgress = (msg) => {
-        if (msg.status) answer.textContent = t("首次启动（") + (msg.pct || 0) + t("%）：") + t(msg.status);
+        if (msg.status) answer.textContent = uiT("首次启动（") + (msg.pct || 0) + uiT("%）：") + uiT(msg.status);
       };
       try {
         await window.BC.ensureReady();
@@ -255,13 +255,13 @@ async function compute() {
         if (computeBtn) computeBtn.disabled = false;
       }
     }
-    $("answerBox").textContent = t("计算中…");
+    $("answerBox").textContent = uiT("计算中…");
     lastPayload = payload;
     const res = await window.BC.dispatch(payload);
     renderResult(res);
   } catch (err) {
     if (computeBtn) computeBtn.disabled = false;
-    renderError(t("计算失败：") + t(err.message));
+    renderError(uiT("计算失败：") + uiT(err.message));
   }
 }
 
@@ -334,7 +334,7 @@ function equalPress() {
     out.className = "result error";
     const hint = /x 赋值|assigned a value|variable x/i.test(res.error || "");
     const msg = hint
-      ? t("含变量 x · 试试 d/dx(函数, 点) 或 ∫(函数, 下限, 上限)")
+      ? uiT("含变量 x · 试试 d/dx(函数, 点) 或 ∫(函数, 下限, 上限)")
       : "Error · " + res.error;
     out.textContent = msg;
     exam.result = msg;
@@ -382,16 +382,16 @@ function examKey(action) {
     exam.deg = !exam.deg; saveExam(); updateExamScreen();
     if (graphInited && window.BCGraph) window.BCGraph.setExpression(null, exam.deg, exam.expr);
     const state = recomputeCurrent();
-    const detail = state === "ok" ? t(" · 当前表达式已按新单位重算")
-      : state === "ans" ? t(" · 含 Ans 的表达式按 = 重新计算")
-      : t(" · 表达式未算完，按 = 重新计算");
-    graphStatus(t("已切到 ") + (exam.deg ? "DEG" : "RAD") + detail, state === "ok" ? "ok" : "warn");
+    const detail = state === "ok" ? uiT(" · 当前表达式已按新单位重算")
+      : state === "ans" ? uiT(" · 含 Ans 的表达式按 = 重新计算")
+      : uiT(" · 表达式未算完，按 = 重新计算");
+    graphStatus(uiT("已切到 ") + (exam.deg ? "DEG" : "RAD") + detail, state === "ok" ? "ok" : "warn");
   } else if (action === "frac") {
     exam.frac = !exam.frac; saveExam(); updateExamScreen();
     const state = recomputeCurrent();
     if (state !== "ok") {
-      graphStatus(state === "ans" ? t("含 Ans 的表达式按 = 刷新结果")
-        : t("显示格式已切换 · 按 = 刷新结果"), "warn");
+      graphStatus(state === "ans" ? uiT("含 Ans 的表达式按 = 刷新结果")
+        : uiT("显示格式已切换 · 按 = 刷新结果"), "warn");
     }
   }
 }
@@ -452,19 +452,19 @@ function initExamEvents() {
   $("plotNow").addEventListener("click", () => {
     if (!window.BCGraph) return;
     if (!exam.expr || !exam.expr.trim()) {
-      graphStatus(t("请先输入表达式再画图"), "warn");
+      graphStatus(uiT("请先输入表达式再画图"), "warn");
       return;
     }
     try {
       window.BCGraph.setExpression(window.BCCalc.graphLatex(exam.expr), exam.deg, exam.expr);
-      graphStatus(t("已绘制 ") + exam.expr, "ok");
+      graphStatus(uiT("已绘制 ") + exam.expr, "ok");
     } catch (e) {
-      graphStatus(t("这个表达式暂时画不了：") + t(e.message), "warn");
+      graphStatus(uiT("这个表达式暂时画不了：") + uiT(e.message), "warn");
     }
   });
   $("graphClear").addEventListener("click", () => {
     window.BCGraph.clear();
-    graphStatus(t("已清空图像"), "");
+    graphStatus(uiT("已清空图像"), "");
   });
   $("plotIn").addEventListener("click", () => window.BCGraph.zoom(0.6));
   $("plotOut").addEventListener("click", () => window.BCGraph.zoom(1.6));
@@ -540,8 +540,8 @@ function renderNoteArticle(id) {
   if (!box || !NOTES) return;
   const a = NOTES.find(id);
   if (!a) {
-    box.innerHTML = "<h2>" + escapeHtml(t("小讲义")) + "</h2><p class='note-lead'>" +
-      escapeHtml(t("从左侧选一篇开始读。")) + "</p>";
+    box.innerHTML = "<h2>" + escapeHtml(uiT("小讲义")) + "</h2><p class='note-lead'>" +
+      escapeHtml(uiT("从左侧选一篇开始读。")) + "</p>";
     return;
   }
   box.innerHTML =
