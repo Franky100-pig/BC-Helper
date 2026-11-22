@@ -16,7 +16,7 @@
     "991 计算器 + Desmos": "991 calculator + Desmos",
     "小讲义": "Notes",
     "从左侧选一篇开始读。": "Pick an article from the left to start reading.",
-    "推导引擎按需启动 · 点「计算」时才加载（首次约 1 分钟，讲义和考场模式立即能用）": "Engine loads on demand · starts on first Calculate (about 1 minute the first time; Notes and Exam mode work instantly)",
+    "推导引擎按需启动 · 点「计算」时才加载（首次约 20 秒，讲义和考场模式立即能用）": "Engine loads on demand · starts on first Calculate (about 20 seconds the first time; Notes and Exam mode work instantly)",
     "求导": "Derivative",
     "积分": "Integral",
     "输入": "Input",

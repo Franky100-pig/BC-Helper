@@ -243,7 +243,7 @@ async function compute() {
       }
       $("answerBox").textContent = uiT("首次计算：正在后台启动推导引擎，启动后会自动算出结果…");
       if (computeBtn) computeBtn.disabled = true;
-      // 把引擎的分阶段进度实时显示出来，避免「干等 1 分钟」的错觉。
+      // 把引擎的分阶段进度实时显示出来，避免「干等 20 秒」的错觉。
       const answer = $("answerBox");
       window.BC.onProgress = (msg) => {
         if (msg.status) answer.textContent = uiT("首次启动（") + (msg.pct || 0) + uiT("%）：") + uiT(msg.status);
