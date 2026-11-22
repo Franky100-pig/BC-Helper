@@ -20,6 +20,19 @@ const EXAMPLES = {
     { label: "定积分 (definite)", expr: "x^2", kind: "definite", lower: "0", upper: "2" },
     { label: "反正切 (arctangent)", expr: "1/(1+x^2)" },
   ],
+  limit: [
+    { label: "可去间断 (removable)", expr: "sin(x)/x", limitAt: "0" },
+    { label: "趋于无穷 (at infinity)", expr: "1/x", limitAt: "oo" },
+    { label: "洛必达 (L'Hôpital)", expr: "ln(x)/x", limitAt: "oo" },
+    { label: "发散到 ∞", expr: "x^2", limitAt: "oo" },
+  ],
+  series: [
+    { label: "几何级数 (geometric)", expr: "(1/2)^n" },
+    { label: "p-级数 (p-series)", expr: "1/n^2" },
+    { label: "调和级数 (harmonic)", expr: "1/n" },
+    { label: "交错级数 (alternating)", expr: "(-1)^n/n" },
+    { label: "比值判别 (ratio test)", expr: "n/2^n" },
+  ],
 };
 
 const DEFAULT_STATE = {
@@ -31,6 +44,9 @@ const DEFAULT_STATE = {
   method: "auto",
   lower: "0",
   upper: "2",
+  limitAt: "0",
+  limitSide: "both",
+  seriesStart: "1",
   showSteps: true,
 };
 
@@ -80,6 +96,13 @@ function plainTex(raw) {
     .replace(/\$/g, "\\$");
 }
 
+function limitTargetTex(raw) {
+  const value = String(raw || "").trim().toLowerCase();
+  if (value === "oo" || value === "+oo" || value === "inf" || value === "infinity") return "\\infty";
+  if (value === "-oo" || value === "-inf" || value === "-infinity") return "-\\infty";
+  return latexOf(raw) || plainTex(raw);
+}
+
 // 只有顶层出现加减时才给整个表达式加括号，√ 和分式内部不加，贴近手写习惯。
 function needsParens(latex) {
   let depth = 0;
@@ -109,6 +132,11 @@ function renderExprPreview() {
     display = d + body;
     const at = $("at").value.trim();
     if (at) display += "\\big|_{x=" + (latexOf(at) || plainTex(at)) + "}";
+  } else if (state.mode === "limit") {
+    display = "\\lim_{x \\to " + limitTargetTex($("limitAt").value) + "}" + body;
+  } else if (state.mode === "series") {
+    const start = plainTex($("seriesStart").value.trim() || "1");
+    display = "\\sum_{n=" + start + "}^{\\infty}" + body;
   } else if (state.kind === "definite") {
     const a = latexOf($("lower").value) || plainTex($("lower").value);
     const b = latexOf($("upper").value) || plainTex($("upper").value);
@@ -145,6 +173,9 @@ function applyExample(ex) {
   if (ex.method !== undefined) state.method = ex.method;
   if (ex.lower !== undefined) state.lower = ex.lower;
   if (ex.upper !== undefined) state.upper = ex.upper;
+  if (ex.limitAt !== undefined) state.limitAt = ex.limitAt;
+  if (ex.limitSide !== undefined) state.limitSide = ex.limitSide;
+  if (ex.seriesStart !== undefined) state.seriesStart = ex.seriesStart;
   syncControls();
   saveState();
   compute();
@@ -158,9 +189,15 @@ function syncControls() {
   $("method").value = state.method;
   $("lower").value = state.lower;
   $("upper").value = state.upper;
+  $("limitAt").value = state.limitAt;
+  $("limitSide").value = state.limitSide;
+  $("seriesStart").value = state.seriesStart;
   $("showSteps").checked = !!state.showSteps;
+  $("exprLabel").textContent = uiT(state.mode === "series" ? "aₙ =" : "f(x) =");
   $("derivativeControls").hidden = state.mode !== "derivative";
   $("integralControls").hidden = state.mode !== "integral";
+  $("limitControls").hidden = state.mode !== "limit";
+  $("seriesControls").hidden = state.mode !== "series";
   $("boundsRow").hidden = state.kind !== "definite";
   document.querySelectorAll(".mode-tab").forEach((tab) => {
     tab.classList.toggle("active", tab.dataset.mode === state.mode);
@@ -222,6 +259,11 @@ async function compute() {
   if (state.mode === "derivative") {
     payload.order = Number($("order").value);
     payload.at = $("at").value.trim();
+  } else if (state.mode === "limit") {
+    payload.at = $("limitAt").value.trim();
+    payload.side = $("limitSide").value;
+  } else if (state.mode === "series") {
+    payload.start = $("seriesStart").value.trim();
   } else {
     payload.kind = $("kind").value;
     payload.method = $("method").value;
@@ -273,6 +315,9 @@ function collectState() {
   state.method = $("method").value;
   state.lower = $("lower").value;
   state.upper = $("upper").value;
+  state.limitAt = $("limitAt").value;
+  state.limitSide = $("limitSide").value;
+  state.seriesStart = $("seriesStart").value;
   state.showSteps = $("showSteps").checked;
   saveState();
   renderExprPreview();
@@ -478,7 +523,7 @@ function initEvents() {
   document.querySelectorAll(".mode-tab").forEach((tab) => {
     tab.addEventListener("click", () => setMode(tab.dataset.mode));
   });
-  ["expr", "order", "at", "kind", "method", "lower", "upper", "showSteps"].forEach((id) => {
+  ["expr", "order", "at", "kind", "method", "lower", "upper", "limitAt", "limitSide", "seriesStart", "showSteps"].forEach((id) => {
     $(id).addEventListener("change", () => {
       collectState();
       if (id === "kind") syncControls();
@@ -601,6 +646,7 @@ initExamEvents();
 if (window.BC_I18N && typeof window.BC_I18N.onChange === "function") {
   window.BC_I18N.onChange(function () {
     syncControls();
+    if (window.BC && typeof window.BC.refreshCacheStatus === "function") window.BC.refreshCacheStatus();
     if (!$("viewNotes").hidden) renderNotesPage();
     // 步骤里的中文/英文是引擎生成的；已就绪时重算一次让讲解跟着切换。
     if (lastPayload && window.BC && window.BC.ready) compute();

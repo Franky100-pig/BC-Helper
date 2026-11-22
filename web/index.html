@@ -287,12 +287,14 @@ footer { border-top:1px solid var(--border); padding:14px 24px; font-size:12px; 
   <div class="mode-tabs" role="tablist">
     <button class="mode-tab active" type="button" data-mode="derivative"><span data-i18n>求导</span><small>Derivative</small></button>
     <button class="mode-tab" type="button" data-mode="integral"><span data-i18n>积分</span><small>Integral</small></button>
+    <button class="mode-tab" type="button" data-mode="limit"><span data-i18n>极限</span><small>Limit</small></button>
+    <button class="mode-tab" type="button" data-mode="series"><span data-i18n>级数</span><small>Series</small></button>
   </div>
 
   <div class="workspace">
     <section class="card" id="inputPanel">
       <h2 data-i18n>输入</h2>
-      <label>f(x) =
+      <label><span id="exprLabel" data-i18n>f(x) =</span>
         <input id="expr" type="text" value="x^2*sin(x)+e^(2x)" spellcheck="false" autocomplete="off">
       </label>
       <div class="expr-preview-label" data-i18n>标准排版预览 · Preview</div>
@@ -337,6 +339,31 @@ footer { border-top:1px solid var(--border); padding:14px 24px; font-size:12px; 
             <input id="upper" type="text" value="2" spellcheck="false">
           </label>
         </div>
+      </div>
+
+      <div id="limitControls" hidden>
+        <div class="row">
+          <label><span data-i18n>趋近于 x → a</span>
+            <input id="limitAt" type="text" value="0" data-i18n-placeholder="例如 0、pi/2、oo、-oo" spellcheck="false">
+          </label>
+          <label><span data-i18n>方向 (side)</span>
+            <select id="limitSide">
+              <option value="both" selected data-i18n>双侧 (two-sided)</option>
+              <option value="left" data-i18n>左侧 (left)</option>
+              <option value="right" data-i18n>右侧 (right)</option>
+            </select>
+          </label>
+        </div>
+        <p class="hint" data-i18n>输入 oo 或 -oo 表示 ±∞；结果会给出收敛值、发散到 ±∞ 或极限不存在。</p>
+      </div>
+
+      <div id="seriesControls" hidden>
+        <div class="row">
+          <label><span data-i18n>起始 n (start)</span>
+            <input id="seriesStart" type="text" value="1" data-i18n-placeholder="通常填 1" spellcheck="false">
+          </label>
+        </div>
+        <p class="hint" data-i18n>输入通项用 n，例如 1/n^2、(-1)^n/n、n/2^n；会按项判别、几何、p-级数、交错、比值、根值、积分判别依次尝试。</p>
       </div>
 
       <label style="display:flex;align-items:center;gap:8px;margin-top:14px;">

@@ -64,6 +64,16 @@ for (const key of placeholders) {
   checks++;
 }
 
+// 极限 / 级数模式的控件必须存在，避免只加了引擎却进不了界面。
+for (const id of ["limitControls", "seriesControls", "limitAt", "limitSide", "seriesStart", "exprLabel"]) {
+  assert.ok(html.includes('id="' + id + '"'), "缺少模式控件：" + id);
+  checks++;
+}
+for (const mode of ["derivative", "integral", "limit", "series"]) {
+  assert.ok(html.includes('data-mode="' + mode + '"'), "缺少模式标签：" + mode);
+  checks++;
+}
+
 // 讲义英文版：66 篇齐全、无中文残留，且公式仍可被 KaTeX 解析。
 const notesWindow = { BC_I18N: { getLang: () => "en" } };
 const katex = require(path.join(__dirname, "..", "web", "vendor", "katex", "katex.min.js"));

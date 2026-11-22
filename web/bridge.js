@@ -1,7 +1,7 @@
 "use strict";
 
 // 浏览器里的 SymPy 引擎：优先用同源 /pyodide/，失败再依次试公开镜像。
-window.BC = { ready: false, error: null, dispatch: null, retry: null };
+window.BC = { ready: false, error: null, dispatch: null, retry: null, refreshCacheStatus: refreshCacheStatus };
 const t = (s) => (window.BC_I18N ? window.BC_I18N.t(s) : s);
 
 try {
@@ -51,6 +51,20 @@ function primeEngineCache() {
 }
 
 /* 离线缓存状态徽标（只查询、不干预引擎启动）。 */
+let cacheInfo = null;
+
+function paintCacheReady(el, files) {
+  el.className = "cache-status ready";
+  el.textContent = t("✓ 引擎已装到浏览器 · ") + files + t(" 个文件在本地，断网也能算");
+}
+
+// 语言切换时由 app.js 调用，给已经查到的缓存状态重新套当前语言。
+function refreshCacheStatus() {
+  if (!cacheInfo) return;
+  const el = document.getElementById("cacheStatus");
+  if (el) paintCacheReady(el, cacheInfo.files);
+}
+
 function reportCacheStatus(ready) {
   const el = document.getElementById("cacheStatus");
   if (!el || !navigator.serviceWorker || !("caches" in window)) return;
@@ -58,8 +72,8 @@ function reportCacheStatus(ready) {
     if (!event.data || event.data.type !== "BC_CACHE_STATUS_RESULT") return;
     const s = event.data.payload || {};
     if (s.engine) {
-      el.className = "cache-status ready";
-      el.textContent = t("✓ 引擎已装到浏览器 · ") + s.files + t(" 个文件在本地，断网也能算");
+      cacheInfo = s;
+      paintCacheReady(el, s.files);
       navigator.serviceWorker.removeEventListener("message", onMsg);
     } else if (ready) {
       el.className = "cache-status warn";
