@@ -18,7 +18,41 @@
  * 中文优先，关键概念保留英文原名；公式符号按英文教材写法。
  * 内容是静态文案，直接当 HTML 用，所以 < 写成 &lt;、> 写成 &gt;。
  * 新增一篇只需往 articles 里加一项，目录页会自动出现。
+ *
+ * 英文版：notes.en.js（window.BC_NOTES_EN）按 id 提供译文；BC_I18N 切到 en 时
+ * find()/byCat()/blocksHtml() 自动取英文，公式与 fig/roadmap 键保持原样。
  */
+var BC_NOTES_EN = (typeof window !== "undefined" && window.BC_NOTES_EN) || null;
+function bcLang() {
+  return (typeof window !== "undefined" && window.BC_I18N && window.BC_I18N.getLang()) || "zh";
+}
+function enMode() { return bcLang() === "en" && !!BC_NOTES_EN; }
+function enArticle(a) {
+  if (!enMode() || !BC_NOTES_EN.articles[a.id]) return a;
+  var e = BC_NOTES_EN.articles[a.id];
+  return {
+    id: a.id, cat: a.cat, topics: a.topics,
+    tag: e.tag, title: e.title, lead: e.lead, blocks: e.blocks,
+  };
+}
+function enCategory(c) {
+  if (!enMode() || !BC_NOTES_EN.categories) return c;
+  for (var i = 0; i < BC_NOTES_EN.categories.length; i++) {
+    var e = BC_NOTES_EN.categories[i];
+    if (e.id !== c.id) continue;
+    return {
+      id: c.id, weight: c.weight, label: e.label,
+      topics: c.topics.map(function (tp, j) {
+        return { n: tp.n, t: (e.topics[j] && e.topics[j].t) || tp.t };
+      }),
+    };
+  }
+  return c;
+}
+function enText(s) {
+  if (!enMode() || !BC_NOTES_EN.figText) return s;
+  return Object.prototype.hasOwnProperty.call(BC_NOTES_EN.figText, s) ? BC_NOTES_EN.figText[s] : s;
+}
 window.BC_NOTES = (function () {
   /* 按 College Board AP Calculus BC CED（2026–27 澄清版，章节内容未变）的
    * 10 个官方 Unit 组织。weight 为官方选择题占比；topics 是官方主题顺序，
@@ -2158,10 +2192,10 @@ window.BC_NOTES = (function () {
     for (var i = 0; i < articles.length; i++) {
       var a = articles[i];
       if (!map[a.cat]) { map[a.cat] = []; order.push(a.cat); }
-      map[a.cat].push(a);
+      map[a.cat].push(enArticle(a));
     }
     var known = categories.filter(function (c) { return map[c.id]; }).map(function (c) {
-      return { id: c.id, label: c.label, items: map[c.id] };
+      return { id: c.id, label: enCategory(c).label, items: map[c.id] };
     });
     var extra = order.filter(function (id) {
       return !categories.some(function (c) { return c.id === id; });
@@ -2171,7 +2205,7 @@ window.BC_NOTES = (function () {
 
   function find(id) {
     for (var i = 0; i < articles.length; i++) {
-      if (articles[i].id === id) return articles[i];
+      if (articles[i].id === id) return enArticle(articles[i]);
     }
     return null;
   }
@@ -2182,7 +2216,7 @@ window.BC_NOTES = (function () {
 
   function categoryById(id) {
     for (var i = 0; i < categories.length; i++) {
-      if (categories[i].id === id) return categories[i];
+      if (categories[i].id === id) return enCategory(categories[i]);
     }
     return null;
   }
@@ -2198,6 +2232,10 @@ window.BC_NOTES = (function () {
   function roadmapHtml(catId) {
     var cat = categoryById(catId);
     if (!cat) return "";
+    var words = (enMode() && BC_NOTES_EN.roadmap) || {
+      head: "官方主题进度 · {done} / {total} 已覆盖",
+      done: "已覆盖 · 阅读 →", todo: "待补",
+    };
     var done = 0;
     var items = cat.topics.map(function (tp) {
       var a = coverageFor(catId, tp.n);
@@ -2205,12 +2243,14 @@ window.BC_NOTES = (function () {
       return '<div class="roadmap-item ' + (a ? "done" : "todo") + '">' +
         '<span class="roadmap-n">' + esc(tp.n) + '</span>' +
         '<span class="roadmap-txt">' + esc(tp.t) + '</span>' +
-        (a ? '<button type="button" class="roadmap-jump" data-jump="' + esc(a.id) + '">已覆盖 · 阅读 →</button>'
-           : '<span class="roadmap-todo">待补</span>') +
+        (a ? '<button type="button" class="roadmap-jump" data-jump="' + esc(a.id) + '">' +
+             esc(words.done) + '</button>'
+           : '<span class="roadmap-todo">' + esc(words.todo) + '</span>') +
         '</div>';
     }).join("");
+    var head = words.head.replace("{done}", done).replace("{total}", cat.topics.length);
     return '<div class="note-roadmap">' +
-      '<div class="roadmap-head">官方主题进度 · ' + done + ' / ' + cat.topics.length + ' 已覆盖</div>' +
+      '<div class="roadmap-head">' + esc(head) + '</div>' +
       items + '</div>';
   }
 
@@ -2226,11 +2266,24 @@ window.BC_NOTES = (function () {
       if (b.steps) return "<ol class=\"note-steps\">" + b.steps.map(function (x) {
         return "<li>" + esc(x) + "</li>";
       }).join("") + "</ol>";
-      if (b.tip) return "<div class=\"note-callout\"><b>提示 · Tip</b><br>" + esc(b.tip) + "</div>";
+      if (b.tip) {
+        var tipWord = (enMode() && BC_NOTES_EN.roadmap && BC_NOTES_EN.roadmap.tip) || "提示 · Tip";
+        return '<div class="note-callout"><b>' + esc(tipWord) + '</b><br>' + esc(b.tip) + '</div>';
+      }
       if (b.roadmap) return roadmapHtml(b.roadmap);
       if (b.fig) {
         var svg = figures[b.fig];
         if (!svg) return "";
+        if (enMode()) {
+          svg = svg.replace(/<text([^>]*)>([\s\S]*?)<\/text>/g, function (all, attrs, inner) {
+            var translated = enText(inner.trim());
+            return translated === inner.trim() ? all : "<text" + attrs + ">" + esc(translated) + "</text>";
+          });
+          // 少数图把中文直接写在 <text> 之外（discont 的三栏标题），再兜底替换一次。
+          Object.keys(BC_NOTES_EN.figText).forEach(function (zh) {
+            if (svg.indexOf(zh) !== -1) svg = svg.split(zh).join(enText(zh));
+          });
+        }
         return '<figure class="note-figure">' + svg +
           (b.cap ? '<figcaption>' + esc(b.cap) + '</figcaption>' : '') + '</figure>';
       }

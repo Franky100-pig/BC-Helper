@@ -29,7 +29,8 @@ def main():
     web = ROOT / "web"
     pages = {name: (web / name).read_text(encoding="utf-8")
              for name in ("index.html", "app.js", "bridge.js", "engine-worker.js",
-                          "calc-engine.js", "desmos.js", "notes.js", "sw.js")}
+                          "calc-engine.js", "desmos.js", "i18n.js", "notes.en.js",
+                          "notes.js", "sw.js")}
     blob = json.dumps(core, ensure_ascii=False) + "".join(pages.values())
     version = hashlib.sha1(blob.encode("utf-8")).hexdigest()[:8]
     query = "?v=" + version
@@ -39,7 +40,8 @@ def main():
         encoding="utf-8",
     )
     html = pages["index.html"]
-    for name in ("core_bundle.js", "bridge.js", "app.js", "calc-engine.js", "desmos.js", "notes.js"):
+    for name in ("i18n.js", "core_bundle.js", "bridge.js", "app.js", "calc-engine.js",
+                 "desmos.js", "notes.en.js", "notes.js"):
         html = html.replace(
             '<script src="' + name + '"></script>',
             '<script src="' + name + query + '"></script>',
@@ -48,13 +50,14 @@ def main():
     # 把带 ?v=hash 的真实资源 URL 注入 SW：页面缓存的是 build 后的 index.html，
     # 其中脚本全部带版本号；离线时这些带版本号的请求必须命中缓存，否则白屏。
     versioned = ["./" + name + query for name in
-                 ("core_bundle.js", "bridge.js", "engine-worker.js", "app.js",
-                  "calc-engine.js", "desmos.js", "notes.js")]
+                 ("i18n.js", "core_bundle.js", "bridge.js", "engine-worker.js", "app.js",
+                  "calc-engine.js", "desmos.js", "notes.en.js", "notes.js")]
     sw = pages["sw.js"].replace(
         "/*__BC_VERSIONED__*/[]/*__BC_VERSIONED_END__*/",
         "/*__BC_VERSIONED__*/" + json.dumps(versioned) + "/*__BC_VERSIONED_END__*/",
     )
-    for name in ("app.js", "bridge.js", "engine-worker.js", "calc-engine.js", "desmos.js", "notes.js"):
+    for name in ("app.js", "bridge.js", "engine-worker.js", "calc-engine.js",
+                 "desmos.js", "i18n.js", "notes.en.js", "notes.js"):
         (OUT / name).write_text(pages[name], encoding="utf-8")
     (OUT / "sw.js").write_text(sw, encoding="utf-8")
     vendor = web / "vendor"
