@@ -89,3 +89,32 @@ def test_errors():
     assert not dispatch({"op": "derivative", "expr": "x", "order": 99})["ok"]
     assert not dispatch({"op": "integral", "expr": "x", "kind": "definite", "lower": "x", "upper": "2"})["ok"]
     assert not dispatch({"op": "limit", "expr": "x"})["ok"]
+
+
+def test_english_steps_and_errors():
+    """lang=en 时标题/说明/错误提示全英文；缺省仍保持中文优先。"""
+    result = dispatch({
+        "op": "derivative", "expr": "x^2*sin(x)+e^(2x)", "order": 1, "lang": "en",
+    })
+    assert result["ok"]
+    titles = [step["title"] for step in result["steps"]]
+    assert "Derivative order 1" in titles
+    assert "Sum rule" in titles and "Product rule" in titles
+    notes = " ".join(step["note"] for step in result["steps"])
+    assert "Split the sum" in notes
+    assert not any("\u4e00" <= ch <= "\u9fff" for ch in " ".join(titles) + notes)
+
+    integral = dispatch({
+        "op": "integral", "expr": "x^2*sqrt(x^3+1)",
+        "method": "substitution", "lang": "en",
+    })
+    assert any(step["title"] == "u-substitution" for step in integral["steps"])
+
+    error = dispatch({"op": "derivative", "expr": "x", "order": 6, "lang": "en"})
+    assert error["error"]["message"] == "Derivative order must be an integer from 1 to 5"
+
+
+def test_default_language_is_chinese():
+    result = dispatch({"op": "derivative", "expr": "x^2*sin(x)", "order": 1})
+    titles = " ".join(step["title"] for step in result["steps"])
+    assert "乘积法则" in titles or "和的法则" in titles

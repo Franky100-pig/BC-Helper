@@ -7,7 +7,7 @@ from sympy.parsing.sympy_parser import (
     standard_transformations,
 )
 
-from i18n import ERRORS
+from i18n import err
 
 X = sp.Symbol("x", real=True)
 TRANSFORMS = standard_transformations + (implicit_multiplication_application, convert_xor)
@@ -36,16 +36,17 @@ ALLOWED = {
 }
 
 
-def parse(text, variable=X):
+def parse(text, variable=X, lang="zh"):
     """把用户输入的字符串变成 SymPy 表达式，拒绝其他自由符号。"""
     if not isinstance(text, str) or not text.strip():
-        raise ValueError(ERRORS["empty"])
+        raise ValueError(err("empty", lang))
     cleaned = (
         text.strip()
         .replace("（", "(").replace("）", ")")
         .replace("×", "*").replace("÷", "/")
         .replace("−", "-").replace("·", "*")
     )
+    sep = "：" if lang == "zh" else ": "
     try:
         expr = parse_expr(
             cleaned,
@@ -53,18 +54,18 @@ def parse(text, variable=X):
             transformations=TRANSFORMS,
             evaluate=True,
         )
-    except Exception as exc:  # noqa: BLE001 —— 解析错误统一转成中文提示
-        raise ValueError(f"{ERRORS['bad_expr']}：{exc}") from exc
+    except Exception as exc:  # noqa: BLE001 —— 解析错误统一转成当前语言的提示
+        raise ValueError(f"{err('bad_expr', lang)}{sep}{exc}") from exc
     extra = expr.free_symbols - {variable}
     if extra:
         names = ", ".join(sorted(str(s) for s in extra))
-        raise ValueError(f"{ERRORS['extra_symbol']}：{names}")
+        raise ValueError(f"{err('extra_symbol', lang)}{sep}{names}")
     return expr
 
 
-def constant(text):
+def constant(text, lang="zh"):
     """解析上下限 / 求值点：必须是常数表达式。"""
-    value = parse(text)
+    value = parse(text, lang=lang)
     if value.has(X):
-        raise ValueError(ERRORS["bad_limit"])
+        raise ValueError(err("bad_limit", lang))
     return value

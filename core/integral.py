@@ -3,7 +3,7 @@ import sympy as sp
 from sympy.integrals.manualintegrate import integral_steps, manualintegrate
 
 from format import fmt, fmt_text, step
-from i18n import ERRORS, FORMULAS, label
+from i18n import FORMULAS, err, label, note
 
 MAX_STEPS = 16
 
@@ -65,7 +65,7 @@ def _integrated(expr, var):
         return fmt(expr)
 
 
-def _walk(rule, steps, depth=0, preferred=()):
+def _walk(rule, steps, depth=0, preferred=(), lang="zh"):
     if rule is None or len(steps) >= MAX_STEPS:
         return
     name = type(rule).__name__
@@ -83,11 +83,11 @@ def _walk(rule, steps, depth=0, preferred=()):
             chosen = choices[0]
         if len(choices) > 1:
             steps.append(step(
-                "alternative", label("alternative"), fmt(rule.integrand),
-                fmt_text(f"优先尝试 {type(chosen).__name__}"),
-                f"SymPy 找到 {len(choices)} 条可能的路径。", depth
+                "alternative", label("alternative", lang), fmt(rule.integrand),
+                fmt_text(note("alternative_try", lang, name=type(chosen).__name__)),
+                note("alternative_note", lang, n=len(choices)), depth
             ))
-        _walk(chosen, steps, depth, preferred)
+        _walk(chosen, steps, depth, preferred, lang)
         return
 
     if name == "PartsRule":
@@ -100,14 +100,14 @@ def _walk(rule, steps, depth=0, preferred=()):
         du = sp.diff(u, variable) if u is not None and variable is not None else None
         leftover = sp.simplify(v * du) if v is not None and du is not None else None
         steps.append(step(
-            "parts", label("parts"),
+            "parts", label("parts", lang),
             _as_integral(rule.integrand, variable),
             fmt_text(f"{_latex(u)}\\,{_latex(v)} - {_as_integral(leftover, variable)['latex']}"),
-            f"取 u = {_text(u)}，dv = {_text(dv)}，则 du = {_text(du)} dx、v = {_text(v)}；"
-            "分部积分后只需再算剩下那个较小的积分。", depth, FORMULAS["parts"]
+            note("parts", lang, u=_text(u), dv=_text(dv), du=_text(du), v=_text(v)),
+            depth, FORMULAS["parts"]
         ))
-        _walk(getattr(rule, "v_step", None), steps, depth + 1, preferred)
-        _walk(getattr(rule, "second_step", None), steps, depth + 1, preferred)
+        _walk(getattr(rule, "v_step", None), steps, depth + 1, preferred, lang)
+        _walk(getattr(rule, "second_step", None), steps, depth + 1, preferred, lang)
         return
 
     if name == "URule":
@@ -122,14 +122,13 @@ def _walk(rule, steps, depth=0, preferred=()):
         if new_integrand is None:
             new_integrand = u_var
         steps.append(step(
-            "substitution", label("substitution"),
+            "substitution", label("substitution", lang),
             _as_integral(rule.integrand, variable),
             _as_integral(new_integrand, new_var),
-            f"令 u = {_text(u_func)}，则 du = {_text(du)} dx，"
-            f"把 dx 一起换成 du 后得到右边这个更简单的积分。", depth,
-            FORMULAS["substitution"]
+            note("substitution", lang, u=_text(u_func), du=_text(du)),
+            depth, FORMULAS["substitution"]
         ))
-        _walk(substep, steps, depth + 1, preferred)
+        _walk(substep, steps, depth + 1, preferred, lang)
         return
 
     if name in ("ConstantTimesRule", "ConstMulRule"):
@@ -137,12 +136,12 @@ def _walk(rule, steps, depth=0, preferred=()):
         other = getattr(rule, "other", rule.integrand)
         variable = getattr(rule, "variable", None)
         steps.append(step(
-            "constant_multiple", label("constant_multiple"),
+            "constant_multiple", label("constant_multiple", lang),
             _as_integral(rule.integrand, variable),
             _as_const_integral(constant, other, variable),
-            f"把常数 {_text(constant)} 提到积分号外；它不会消失，最后要乘回结果。", depth
+            note("constant_multiple", lang, constant=_text(constant)), depth
         ))
-        _walk(getattr(rule, "substep", None), steps, depth + 1, preferred)
+        _walk(getattr(rule, "substep", None), steps, depth + 1, preferred, lang)
         return
 
     if name == "AddRule":
@@ -155,46 +154,40 @@ def _walk(rule, steps, depth=0, preferred=()):
             "text": " + ".join(p["text"] for p in parts) or _latex(rule.integrand),
         }
         steps.append(step(
-            "term_by_term", label("term_by_term"),
+            "term_by_term", label("term_by_term", lang),
             _as_integral(rule.integrand, variable), after,
-            "把和式拆成几项，分别积分后再相加。", depth
+            note("term_by_term", lang), depth
         ))
         for sub in substeps:
-            _walk(sub, steps, depth + 1, preferred)
+            _walk(sub, steps, depth + 1, preferred, lang)
         return
 
     if name == "RewriteRule":
         variable = getattr(rule, "variable", None)
         rewritten = getattr(rule, "rewritten", rule.integrand)
         steps.append(step(
-            "integral_direct", label("integral_direct"),
+            "integral_direct", label("integral_direct", lang),
             _as_integral(rule.integrand, variable),
             _as_integral(rewritten, variable),
-            "先做恒等变形，再用基本积分公式。", depth
+            note("rewrite", lang), depth
         ))
-        _walk(getattr(rule, "substep", None), steps, depth + 1, preferred)
+        _walk(getattr(rule, "substep", None), steps, depth + 1, preferred, lang)
         return
 
     key = RULE_LABELS.get(name, "integral_direct")
-    note = {
-        "integral_power": "幂函数积分：指数加 1，再除以新指数。",
-        "integral_exp": "指数函数积分：e 的原函数还是 e 的函数。",
-        "integral_trig": "套用三角函数的基本积分公式。",
-        "integral_log": "对数函数积分：原函数含 x·ln x − x。",
-        "integral_arctan": "形如 1/(a²+x²) 的积分得到反正切。",
-    }.get(key, "套用基本积分公式。")
+    explanation = note(key, lang)
     variable = getattr(rule, "variable", None)
     if key == "integral_power" and isinstance(rule.integrand, sp.Pow):
         power = rule.integrand.exp
-        note = (f"幂函数积分：指数 {_text(power)} 加 1 得 {_text(power + 1)}，"
-                f"再除以 {_text(power + 1)}。")
-    steps.append(step(key, label(key),
+        explanation = note("integral_power_detail", lang,
+                           power=_text(power), next=_text(power + 1))
+    steps.append(step(key, label(key, lang),
                       _as_integral(rule.integrand, variable),
                       _integrated(rule.integrand, variable),
-                      note, depth))
+                      explanation, depth))
 
 
-def integral_steps_for(expr, x, method="auto"):
+def integral_steps_for(expr, x, method="auto", lang="zh"):
     """返回 (原函数, 步骤列表)。method: auto / substitution / parts。"""
     preferred = {
         "substitution": ("URule",),
@@ -206,17 +199,17 @@ def integral_steps_for(expr, x, method="auto"):
     except Exception as exc:  # noqa: BLE001
         antiderivative = sp.integrate(expr, x)
         if isinstance(antiderivative, sp.Integral):
-            raise ValueError(ERRORS["no_integral"]) from exc
+            raise ValueError(err("no_integral", lang)) from exc
         rule_tree = None
     if isinstance(antiderivative, sp.Integral):
-        raise ValueError(ERRORS["no_integral"])
+        raise ValueError(err("no_integral", lang))
 
     steps = []
     if rule_tree is not None:
-        _walk(rule_tree, steps, 0, preferred)
+        _walk(rule_tree, steps, 0, preferred, lang)
     return antiderivative, steps
 
 
-def antiderivative_with_steps(expr, x, method="auto"):
+def antiderivative_with_steps(expr, x, method="auto", lang="zh"):
     """兼容旧调用名。"""
-    return integral_steps_for(expr, x, method)
+    return integral_steps_for(expr, x, method, lang)

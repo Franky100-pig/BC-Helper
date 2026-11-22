@@ -3,36 +3,41 @@ import sympy as sp
 
 from derivative import derivative_steps
 from expr import X, constant, parse
-from format import fmt, fmt_text, step
-from i18n import ERRORS, FORMULAS, label
+from format import fmt, step
+from i18n import FORMULAS, err, label, note
 from integral import integral_steps_for
 
 VERSION = "0.1.0"
+
+
+def _lang(payload):
+    value = payload.get("lang", "zh") if isinstance(payload, dict) else "zh"
+    return value if value in ("zh", "en") else "zh"
 
 
 def _error(message):
     return {"ok": False, "error": {"message": message}, "version": VERSION}
 
 
-def _derivative(payload, expr):
+def _derivative(payload, expr, lang):
     try:
         order = int(payload.get("order", 1))
     except (TypeError, ValueError) as exc:
-        raise ValueError(ERRORS["bad_order"]) from exc
+        raise ValueError(err("bad_order", lang)) from exc
     if order < 1 or order > 5:
-        raise ValueError(ERRORS["bad_order"])
+        raise ValueError(err("bad_order", lang))
 
-    result, steps = derivative_steps(expr, X, order)
+    result, steps = derivative_steps(expr, X, order, lang)
     answer = fmt(result)
     secondary = None
 
     at = payload.get("at")
     if at is not None and str(at).strip():
-        point = constant(str(at))
+        point = constant(str(at), lang)
         value = sp.simplify(result.subs(X, point))
         steps.append(step(
-            "evaluate", label("evaluate"), fmt(result), fmt(value),
-            f"把 x = {str(point).replace('**', '^')} 代入导数表达式。", 0
+            "evaluate", label("evaluate", lang), fmt(result), fmt(value),
+            note("evaluate", lang, point=str(point).replace("**", "^")), 0
         ))
         answer = fmt(value)
         secondary = fmt(result)
@@ -52,10 +57,10 @@ def _derivative(payload, expr):
     }
 
 
-def _integral(payload, expr):
+def _integral(payload, expr, lang):
     kind = payload.get("kind", "indefinite")
     method = payload.get("method", "auto")
-    antiderivative, steps = integral_steps_for(expr, X, method)
+    antiderivative, steps = integral_steps_for(expr, X, method, lang)
 
     # 换元 / 提常数后，最后一步只算出 u 的基本积分；补一步「乘回常数 + 代回 u」，
     # 否则学生会看到 (2/3)u^(3/2) 却不知道怎么变成答案里的 2/9(x³+1)^(3/2)。
@@ -68,20 +73,22 @@ def _integral(payload, expr):
         final = fmt(antiderivative)
         if last_after["latex"] != final["latex"]:
             steps.append(step(
-                "back_substitute", label("back_substitute"), last_after, final,
-                "把前面提到积分号外的常数乘回，再把 u 换回原来的 x，"
-                "就得到最终的原函数（不定积分最后加 + C）。", 0
+                "back_substitute", label("back_substitute", lang), last_after, final,
+                note("back_substitute", lang), 0
             ))
 
     if kind == "definite":
-        lower = constant(str(payload.get("lower", "")))
-        upper = constant(str(payload.get("upper", "")))
+        lower = constant(str(payload.get("lower", "")), lang)
+        upper = constant(str(payload.get("upper", "")), lang)
         value = sp.simplify(sp.integrate(expr, (X, lower, upper)))
         if isinstance(value, sp.Integral):
-            raise ValueError(ERRORS["no_integral"])
+            raise ValueError(err("no_integral", lang))
         steps.append(step(
-            "ftc", label("ftc"), fmt(antiderivative), fmt(value),
-            f"F({str(upper).replace('**', '^')}) − F({str(lower).replace('**', '^')})。", 0, FORMULAS["ftc"]
+            "ftc", label("ftc", lang), fmt(antiderivative), fmt(value),
+            note("ftc", lang,
+                 upper=str(upper).replace("**", "^"),
+                 lower=str(lower).replace("**", "^")),
+            0, FORMULAS["ftc"]
         ))
         return {
             "ok": True,
@@ -118,14 +125,17 @@ def _integral(payload, expr):
 
 
 def dispatch(payload):
-    """payload 是 dict；返回可 JSON 序列化的结果。"""
+    """payload 是 dict；返回可 JSON 序列化的结果。lang: zh（默认）/ en。"""
+    lang = _lang(payload)
     try:
         if not isinstance(payload, dict):
-            raise ValueError("请求格式不对 (invalid payload)")
+            raise ValueError(err("bad_payload", lang))
         op = payload.get("op")
         if op not in ("derivative", "integral"):
-            raise ValueError(ERRORS["bad_op"])
-        expr = parse(payload.get("expr", ""))
-        return _derivative(payload, expr) if op == "derivative" else _integral(payload, expr)
+            raise ValueError(err("bad_op", lang))
+        expr = parse(payload.get("expr", ""), lang=lang)
+        if op == "derivative":
+            return _derivative(payload, expr, lang)
+        return _integral(payload, expr, lang)
     except Exception as exc:  # noqa: BLE001 —— 所有错误都变成结构化提示
         return _error(str(exc))
