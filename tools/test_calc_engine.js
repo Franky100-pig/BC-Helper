@@ -108,4 +108,18 @@ assert.ok(/id="compute"[^>]*class="primary"[^>]*>\s*计算/.test(htmlSrc) &&
   !/id="compute"[^>]*disabled/.test(htmlSrc), "计算按钮不应初始 disabled");
 passed += 4;
 
+// 冷启动优化：源顺序把国内常墙的 cdn.jsdelivr.net 放最后、预缓存预热 + 进度回调
+const srcBlock = bridgeSrc.match(/const PYODIDE_SOURCES\s*=\s*\[([\s\S]*?)\];/);
+assert.ok(srcBlock, "找不到 PYODIDE_SOURCES");
+const srcOrder = (srcBlock[1].match(/https:\/\/[^"'\s]+/g) || []);
+assert.ok(/fastly\.jsdelivr/.test(srcOrder[0] || ""), "fastly 镜像应排在 CDN 兜底之前");
+assert.ok(!/cdn\.jsdelivr/.test(srcOrder[0] || ""), "国内常墙的 cdn.jsdelivr.net 不应排第一");
+assert.ok(/cdn\.jsdelivr/.test(srcOrder[srcOrder.length - 1] || ""), "cdn.jsdelivr.net 应作为最后兜底");
+assert.ok(/function primeEngineCache/.test(bridgeSrc), "缺少引擎缓存预热函数");
+assert.ok(/postMessage\(\{ type: "BC_CACHE_PRIME" \}\)/.test(bridgeSrc), "未向 SW 发缓存预热消息");
+assert.ok(/requestIdleCallback|warmCacheWhenIdle/.test(bridgeSrc), "页面空闲时未触发缓存预热");
+assert.ok(/window\.BC\.onProgress/.test(bridgeSrc), "bridge 未转发引擎进度");
+assert.ok(/window\.BC\.onProgress/.test(appSrc), "app 未消费引擎进度");
+passed += 8;
+
 console.log("calc-engine: " + passed + " checks passed");

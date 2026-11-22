@@ -11,11 +11,14 @@ try {
   }
 } catch (e) {}
 
+// 源顺序按「国内实测可达性」排：同源优先，其次 fastly / gcore 镜像。
+// cdn.jsdelivr.net 在国内常被墙（实测 0 字节却耗满超时），放到最后兜底，
+// 避免同源失败后还要空等它 10 秒才轮到能用的镜像。
 const PYODIDE_SOURCES = [
   "./pyodide/",
-  "https://cdn.jsdelivr.net/pyodide/v0.26.2/full/",
   "https://fastly.jsdelivr.net/pyodide/v0.26.2/full/",
   "https://gcore.jsdelivr.net/pyodide/v0.26.2/full/",
+  "https://cdn.jsdelivr.net/pyodide/v0.26.2/full/",
 ];
 const SCRIPT_TIMEOUT_MS = 10000;
 const LOAD_TIMEOUT_MS = 120000;
@@ -27,6 +30,22 @@ function setStatus(msg, kind) {
   if (box) {
     box.classList.toggle("ready", kind === "ready");
     box.classList.toggle("error", kind === "error");
+  }
+}
+
+/* 让 SW 在后台把引擎文件（约 19 MB）写进 Cache Storage。
+ * 页面一加载就空闲预热：用户看讲义 / 首页的这几秒，引擎已在后台下载，
+ * 等第一次点「计算」时多半已缓存好，只剩 WASM 编译 + import，不用干等下载。
+ * SW 里的 cacheFirst 保证已缓存的文件不会重复下载，可安全重复调用。 */
+function primeEngineCache() {
+  if (!navigator.serviceWorker) return;
+  const send = () => {
+    const ctrl = navigator.serviceWorker.controller;
+    if (ctrl) ctrl.postMessage({ type: "BC_CACHE_PRIME" });
+  };
+  if (navigator.serviceWorker.controller) send();
+  else if (navigator.serviceWorker.ready && typeof navigator.serviceWorker.ready.then === "function") {
+    navigator.serviceWorker.ready.then(send).catch(() => {});
   }
 }
 
@@ -119,8 +138,8 @@ function dispatchPy(payload) {
   return "_bc_dispatch(" + JSON.stringify(JSON.stringify(payload)) + ")";
 }
 
-/* Worker 优先：WASM 编译和 SymPy import 放进后台线程，
- * 首次加载的十几秒里讲义 / 考场计算器 / Desmos 仍能正常操作。 */
+/* Worker 优先：WASM 编译和 SymPy import 放进后台线程，首次「计算」才触发，
+ * 整个启动期间讲义 / 考场计算器 / Desmos 仍能正常操作。 */
 const BRIDGE_SRC = (document.currentScript && document.currentScript.src) || "";
 const WORKER_URL = BRIDGE_SRC
   ? BRIDGE_SRC.replace(/bridge\.js(\?.*)?$/, "engine-worker.js$1")
@@ -173,6 +192,7 @@ function onWorkerMessage(event) {
   if (msg.type === "progress") {
     if (msg.status) setStatus(msg.status);
     if (typeof msg.pct === "number") setProgress(msg.pct);
+    if (typeof window.BC.onProgress === "function") window.BC.onProgress(msg);
     return;
   }
   if (msg.type === "ready") {
@@ -180,6 +200,7 @@ function onWorkerMessage(event) {
     window.BC.error = null;
     setProgress(100);
     setStatus("引擎已就绪 · SymPy 在后台运行，页面不卡顿", "ready");
+    primeEngineCache();   // 引擎已在本地跑起来，此刻补缓存不与首次下载抢带宽
     reportCacheStatus(true);
     const computeBtn = document.getElementById("compute");
     if (computeBtn) computeBtn.disabled = false;
@@ -328,3 +349,12 @@ window.BC.ensureReady = () => new Promise((resolve, reject) => {
 
 window.BC.retry = boot;
 // 不再在页面加载时自动启动引擎；由第一次「计算」经 ensureReady 触发。
+
+// 但引擎文件（19 MB）可以在空闲时后台预下载到 Cache Storage：这不启动 WASM
+// 编译，不占主线程，纯网络 IO。用户看首页 / 讲义的几秒里引擎就下好了，
+// 首次点「计算」只剩编译 + import，等待时间大幅缩短。
+(function warmCacheWhenIdle() {
+  const run = () => primeEngineCache();
+  if (typeof requestIdleCallback === "function") requestIdleCallback(run, { timeout: 2000 });
+  else setTimeout(run, 1200);
+})();

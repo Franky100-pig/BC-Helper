@@ -239,10 +239,19 @@ async function compute() {
         renderError("推导引擎脚本未加载，请刷新页面重试。");
         return;
       }
-      $("answerBox").textContent = "首次计算：正在后台启动推导引擎（约 1 分钟），启动后会自动算出结果…";
+      $("answerBox").textContent = "首次计算：正在后台启动推导引擎，启动后会自动算出结果…";
       if (computeBtn) computeBtn.disabled = true;
-      await window.BC.ensureReady();
-      if (computeBtn) computeBtn.disabled = false;
+      // 把引擎的分阶段进度实时显示出来，避免「干等 1 分钟」的错觉。
+      const answer = $("answerBox");
+      window.BC.onProgress = (msg) => {
+        if (msg.status) answer.textContent = "首次启动（" + (msg.pct || 0) + "%）：" + msg.status;
+      };
+      try {
+        await window.BC.ensureReady();
+      } finally {
+        window.BC.onProgress = null;
+        if (computeBtn) computeBtn.disabled = false;
+      }
     }
     $("answerBox").textContent = "计算中…";
     const res = await window.BC.dispatch(payload);

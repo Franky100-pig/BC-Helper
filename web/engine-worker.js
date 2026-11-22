@@ -1,6 +1,6 @@
 "use strict";
-/* SymPy 引擎跑在 Web Worker 里：WASM 编译 + import 不占主线程，
- * 所以首次加载的十几秒里，讲义、考场计算器、Desmos 都能正常点。 */
+/* SymPy 引擎跑在 Web Worker 里：由第一次「计算」按需触发，WASM 编译 + import
+ * 不占主线程，整个启动期间讲义、考场计算器、Desmos 都能正常操作。 */
 
 const TIMEOUT_MS = 120000;
 let pyodide = null;
