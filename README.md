@@ -1,6 +1,6 @@
 # BC Helper
 
-仿照 [LA Helper](https://github.com/Franky100-pig/LA-Helper) 做的微积分 BC 学习计算器。界面中文优先，关键概念保留英文原名（如「链式法则 (chain rule)」）。核心是求导和积分两种分步计算：
+仿照 [LA Helper](https://github.com/Franky100-pig/LA-Helper) 做的微积分 BC 学习计算器。**中文优先，可一键切英文**：右上角 `EN / 中文` 按钮或 `?lang=en` 切换（记在 localStorage），界面、报错、引擎讲解与全部 66 篇讲义同步换语言；关键概念始终保留英文原名。核心是求导和积分两种分步计算：
 
 - 求导 (derivative)：1–5 阶导数（覆盖 BC 考试需要），可选在 `x = a` 处求值
 - 积分 (integral)：不定积分、定积分，方法偏好可选换元 (u-substitution) / 分部 (integration by parts)
@@ -18,7 +18,7 @@
   - `DRG` 切**角度/弧度 (DEG/RAD)**，`d/c` 切**分数/小数**：切换时自动按新模式重算当前表达式并更新 Ans，Desmos 和图像区的角度徽标同步变化，不会出现一边 DEG 一边 RAD 的错配
   - `Ans` 记忆上一次结果；支持隐式乘法（`2x`、`3sin(x)`）
   - Desmos 连不上时（大陆网络常见）自动降级到内置 canvas 绘图，离线也有图看
-- **小讲义 (Notes)**：按 College Board **AP Calculus BC CED（2026–27 澄清版，章节内容不变）的 10 个官方 Unit** 排序，共 **66 篇**（每 Unit 首篇是「总览 · 官方主题与进度」），含 **1072 条 KaTeX 公式**与 **29 张按真实函数坐标生成的内联 SVG 图示**（曲线、切线、符号表、黎曼和矩形、累积函数、斜率场、级数判别流程图等，深浅主题自适应、离线可用）。总览按官方主题号列出覆盖状态，已覆盖可点按钮跳转，未覆盖标「待补」；侧边栏每个 Unit 点箭头即可折叠 / 展开。每篇带逐步解析与常见坑，`#notes/<id>` 可分享。
+- **小讲义 (Notes)**：按 College Board **AP Calculus BC CED（2026–27 澄清版，章节内容不变）的 10 个官方 Unit** 排序，共 **66 篇**（每 Unit 首篇是「总览 · 官方主题与进度」），含 **1072 条 KaTeX 公式**与 **29 张按真实函数坐标生成的内联 SVG 图示**（曲线、切线、符号表、黎曼和矩形、累积函数、斜率场、级数判别流程图等，深浅主题自适应、离线可用）。**中文 + 英文两版完全对齐**：66 篇正文、111 个官方主题名、图示内文字与进度标签都有译文；切到英文时公式与 `fig` / `roadmap` 键保持原样。总览按官方主题号列出覆盖状态，已覆盖可点按钮跳转，未覆盖标「待补」（英文为 To do）；侧边栏每个 Unit 点箭头即可折叠 / 展开。每篇带逐步解析与常见坑，`#notes/<id>` 可分享。
 
   当前各 Unit 覆盖：
 
@@ -36,8 +36,8 @@
 
 - **看过程，不只看答案**：每一步都带法则标签和公式，像 LA Helper 的矩阵步骤一样可对照课本
 - **本地计算**：表达式不上传，SymPy 跑在浏览器里（Pyodide/WASM）；引擎按需编译——页面打开不占主线程跑数学内核，第一次点「计算」才在 Web Worker 里编译，这次计算会自动排队等它就绪并显示分阶段进度，讲义和考场模式全程秒开；引擎文件会在页面空闲时后台预下载，所以等点计算时多半已缓存好，首算通常只花编译 + import 的十几秒；考场模式的数值引擎是纯 JS，零网络
-- **中文优先**：步骤说明全中文，关键概念附英文，方便从英文教材切换过来
-- **使用人数（仅网页版页脚）**：页脚显示「N 人用 BC Helper 学微积分」，由免费第三方计数器（[Abacus](https://github.com/jasoncodes/abacus)）提供。打开网页只发一次匿名 +1（同一浏览器 localStorage 去重，之后只读），不含表达式、题目或任何个人信息，无 cookie；拿不到 localStorage 或接口失败时整行隐藏，绝不显示 0 或报错。桌面版无此计数
+- **中文优先，英文无缝切换**：默认全中文；点 `EN` 或加 `?lang=en` 切成全英文。`core/i18n.py` 的法则名 / 说明 / 报错、`web/i18n.js` 的界面文案、`notes.en.js` 的讲义译文三处一起切；缺省 `lang=zh`，旧接口与测试行为不变
+- **使用人数（仅网页版页脚）**：页脚显示「N 人用 BC Helper 学微积分」（英文模式为 "N people learning calculus with BC Helper"），由免费第三方计数器（[Abacus](https://github.com/jasoncodes/abacus)）提供。打开网页只发一次匿名 +1（同一浏览器 localStorage 去重，之后只读），不含表达式、题目或任何个人信息，无 cookie；拿不到 localStorage 或接口失败时整行隐藏，绝不显示 0 或报错。桌面版无此计数
 - **装一次，离线可用**：Service Worker 会在页面空闲时把页面、KaTeX 和整个 Python 引擎（约 19 MB）后台写进浏览器缓存——不用等到点「计算」，看首页 / 讲义的几秒里就下好了。第一次打开后，同一个浏览器再打开是秒开，断网也能求导积分；状态栏会显示「✓ 引擎已装到浏览器 · N 个文件在本地」。
 - **考场手感**：991 深色机身 + 液晶屏 + 独立 d/dx / ∫ 键，Desmos 画函数图像
 
@@ -47,6 +47,8 @@
 pip install -r requirements-dev.txt
 pytest
 node tools/test_calc_engine.js        # 考场模式数值引擎测试
+node tools/test_counter.js            # 匿名计数器逻辑
+node tools/test_i18n.js               # 双语字典 / 66 篇英文讲义 / 英文公式自检
 python tools/fetch_katex.py           # 讲义公式自检需要本地 KaTeX
 node tools/test_notes.js              # 讲义篇目 + 1072 条公式 + 29 张图示自检
 
@@ -66,9 +68,10 @@ GitHub Pages 由 `.github/workflows/pages.yml` 在每次 push 到 `main` 时自�
 ## 项目结构
 
 ```
-core/    共享 SymPy 引擎：解析、求导步骤、积分步骤、分发入口
+core/    共享 SymPy 引擎：解析、求导步骤、积分步骤、分发入口（i18n.py 含中英文案）
 web/     单页工作台：分步计算 + 考场模式（991 键盘 / Desmos）+ 分篇讲义
-         engine-worker.js 把 Pyodide/SymPy 放进后台线程，notes.js 存讲义数据
+         engine-worker.js 把 Pyodide/SymPy 放进后台线程
+         i18n.js 界面文案与语言状态，notes.js（中文）/ notes.en.js（英文）存讲义数据
 tools/   静态预览构建、Pyodide 自托管下载、数值引擎与讲义自检
 tests/   核心引擎单元测试
 ```
