@@ -7,6 +7,7 @@ from format import fmt, step
 from i18n import FORMULAS, err, label, note
 from integral import integral_steps_for
 from limits import limit_point, limit_result
+from series import parse_start, series_result
 
 VERSION = "0.1.0"
 
@@ -147,6 +148,24 @@ def _limit(payload, expr, lang):
     }
 
 
+def _series(payload, lang):
+    start = parse_start(payload.get("start", 1), lang)
+    answer, secondary, steps, verdict = series_result(payload.get("expr", ""), start, lang)
+    return {
+        "ok": True,
+        "version": VERSION,
+        "op": "series",
+        "answer": answer,
+        "secondary": secondary,
+        "steps": steps,
+        "meta": {
+            "input": str(payload.get("expr", "")),
+            "start": start,
+            "verdict": verdict,
+        },
+    }
+
+
 def dispatch(payload):
     """payload 是 dict；返回可 JSON 序列化的结果。lang: zh（默认）/ en。"""
     lang = _lang(payload)
@@ -154,8 +173,10 @@ def dispatch(payload):
         if not isinstance(payload, dict):
             raise ValueError(err("bad_payload", lang))
         op = payload.get("op")
-        if op not in ("derivative", "integral", "limit"):
+        if op not in ("derivative", "integral", "limit", "series"):
             raise ValueError(err("bad_op", lang))
+        if op == "series":
+            return _series(payload, lang)
         expr = parse(payload.get("expr", ""), lang=lang)
         if op == "derivative":
             return _derivative(payload, expr, lang)

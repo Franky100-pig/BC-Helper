@@ -47,10 +47,14 @@ def parse(text, variable=X, lang="zh"):
         .replace("−", "-").replace("·", "*")
     )
     sep = "：" if lang == "zh" else ": "
+    local = dict(ALLOWED)
+    local["x"] = variable
+    if str(variable) != "x":
+        local[str(variable)] = variable  # 级数的通项用 n
     try:
         expr = parse_expr(
             cleaned,
-            local_dict=dict(ALLOWED, x=variable),
+            local_dict=local,
             transformations=TRANSFORMS,
             evaluate=True,
         )

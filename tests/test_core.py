@@ -149,6 +149,48 @@ def test_limit_english_and_bad_point():
     assert not dispatch({"op": "limit", "expr": "x", "at": "not-a-point"})["ok"]
 
 
+def test_series_convergence_tests():
+    geometric = dispatch({"op": "series", "expr": "(1/2)^n"})
+    assert geometric["ok"] and geometric["meta"]["verdict"] == "converges_absolutely"
+    assert any("几何级数" in s["title"] for s in geometric["steps"])
+
+    p_series = dispatch({"op": "series", "expr": "1/n^2"})
+    assert p_series["meta"]["verdict"] == "converges_absolutely"
+    assert any("p-级数" in s["title"] for s in p_series["steps"])
+
+    harmonic = dispatch({"op": "series", "expr": "1/n"})
+    assert harmonic["meta"]["verdict"] == "diverges_series"
+
+    alternating = dispatch({"op": "series", "expr": "(-1)^n/n"})
+    assert alternating["meta"]["verdict"] == "converges_conditionally"
+    assert any("交错级数" in s["title"] for s in alternating["steps"])
+
+    absolute_alt = dispatch({"op": "series", "expr": "(-1)^n/n^2"})
+    assert absolute_alt["meta"]["verdict"] == "converges_absolutely"
+
+    ratio = dispatch({"op": "series", "expr": "n/2^n"})
+    assert ratio["meta"]["verdict"] == "converges_absolutely"
+    assert any("比值判别" in s["title"] for s in ratio["steps"])
+
+    integral = dispatch({"op": "series", "expr": "1/(n*ln(n))"})
+    assert integral["meta"]["verdict"] == "diverges_series"
+    assert any("积分判别" in s["title"] for s in integral["steps"])
+
+    term = dispatch({"op": "series", "expr": "(-1)^n*n/(n+1)"})
+    assert term["meta"]["verdict"] == "diverges_series"
+    assert any("项判别" in s["title"] for s in term["steps"])
+
+
+def test_series_english_and_bad_start():
+    result = dispatch({"op": "series", "expr": "(-1)^n/n", "lang": "en"})
+    assert result["ok"] and result["answer"]["text"] == "Converges conditionally"
+    titles = " ".join(s["title"] for s in result["steps"])
+    notes = " ".join(s["note"] for s in result["steps"])
+    assert "Alternating series test" in titles
+    assert not any("\u4e00" <= ch <= "\u9fff" for ch in titles + notes)
+    assert not dispatch({"op": "series", "expr": "1/n", "start": "bad"})["ok"]
+
+
 def test_default_language_is_chinese():
     result = dispatch({"op": "derivative", "expr": "x^2*sin(x)", "order": 1})
     titles = " ".join(step["title"] for step in result["steps"])
